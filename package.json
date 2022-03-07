@@ -1,0 +1,20 @@
+{
+  "name": "com.holygoe.youinject",
+  "version": "0.0.1",
+  "displayName": "You Inject",
+  "description": "Dependency Injection Library for Unity Game Engine",
+  "unity": "2021.2",
+  "unityRelease": "10f1",
+  "documentationUrl": "",
+  "changelogUrl": "",
+  "licensesUrl": "https://github.com/Holygoe/YouInject/blob/main/LICENSE",
+  "keywords": [
+    "Dependency Injection"
+  ],
+  "author": {
+    "name": "You Inject",
+    "email": "kondratev.da@gmail.com",
+    "url": "https://github.com/Holygoe"
+  },
+  "type": "library"
+}
