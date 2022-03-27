@@ -1,6 +1,6 @@
 {
   "name": "com.holygoe.youinject",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "displayName": "You Inject",
   "description": "Dependency Injection Library for Unity Game Engine",
   "unity": "2021.2",

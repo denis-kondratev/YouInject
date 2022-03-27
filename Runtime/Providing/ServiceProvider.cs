@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using UnityEngine;
 
@@ -51,7 +50,7 @@ namespace YouInject
         {
             var descriptor = _services[serviceType];
 
-            if (TryGetExistingDecision(descriptor, out var decision))
+            if (_containers.TryGetDecision(descriptor, out var decision))
             {
                 return decision;
             }
@@ -60,12 +59,6 @@ namespace YouInject
             return decision;
         }
 
-        private bool TryGetExistingDecision(IServiceDescriptor descriptor, [MaybeNullWhen(false)]out object decision)
-        {
-            var container = _containers[descriptor.Lifetime];
-            return container.TryGetDecision(descriptor.ServiceType, out decision);
-        }
-        
         private object MakeDecision(IServiceDescriptor descriptor)
         {
             var serviceType = descriptor.ServiceType;
@@ -78,21 +71,16 @@ namespace YouInject
             }
             
             _resolvingStack.Push(serviceType);
-            object decision;
-            
-            switch (descriptor)
-            {
-                case ServiceDescriptor serviceDescriptor:
-                    decision = serviceDescriptor.MakeDecision(this);
-                    _containers[serviceDescriptor.Lifetime].AddDecision(decision, serviceType);
-                    break;
-                case ComponentDescriptor:
-                    throw new NotImplementedException();
-                default:
-                    throw new Exception(
-                        $"Failed to get a decision because of an unexpected descriptor type: '{descriptor.GetType().Name}'.");
-            }
 
+            var decision = descriptor switch
+            {
+                ServiceDescriptor serviceDescriptor => serviceDescriptor.MakeDecision(this),
+                ComponentDescriptor => throw new NotImplementedException(),
+                _ => throw new Exception(
+                    $"Failed to get a decision because of an unexpected descriptor type: '{descriptor.GetType().Name}'.")
+            };
+
+            _containers.AddDecision(decision, descriptor);
             _resolvingStack.Pop();
             return decision;
         }
@@ -106,10 +94,7 @@ namespace YouInject
 
             var parameters = GetDecisionsAccountingComponents(descriptor.ParameterTypes, restComponents);
             descriptor.InitializeComponent(component, parameters);
-
-            if (descriptor.Lifetime == ServiceLifetime.Transient) return;
-
-            _containers[descriptor.Lifetime].AddDecision(component, serviceType);
+            _containers.AddDecision(component, descriptor);
         }
 
         private object[] GetDecisionsAccountingComponents(
@@ -125,7 +110,7 @@ namespace YouInject
                 var serviceType = servicesTypes[i];
                 var descriptor = _services[serviceType];
 
-                if (TryGetExistingDecision(descriptor, out var decision))
+                if (_containers.TryGetDecision(descriptor, out var decision))
                 {
                     decisions[i] = decision;
                     continue;

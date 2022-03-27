@@ -1,53 +1,35 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using UnityEngine.Assertions;
 
 namespace YouInject
 {
     internal partial class ServiceContainers : IDisposable
     {
-        private static readonly Array LifetimeValues = Enum.GetValues(typeof(ServiceLifetime));
-        private readonly IServiceContainer[] _containers;
+        private readonly IServiceContainer _singletonContainer;
+        private readonly IServiceContainer _scopedContainer;
         private readonly bool _isDerived;
 
         private ServiceContainers()
         {
-            _containers = new IServiceContainer[LifetimeValues.Length];
-
-            foreach (ServiceLifetime lifetime in LifetimeValues)
-            {
-                _containers[(int)lifetime] = lifetime switch
-                {
-                    ServiceLifetime.Transient => new TransientContainer(),
-                    ServiceLifetime.Scoped => new Container(),
-                    ServiceLifetime.Singleton => new Container(),
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-            }
+            _singletonContainer = new Container();
+            _scopedContainer = new Container();
         }
         
         private ServiceContainers(ServiceContainers parentContainers)
         {
             _isDerived = true;
-            _containers = new IServiceContainer[LifetimeValues.Length];
-
-            foreach (ServiceLifetime lifetime in LifetimeValues)
-            {
-                _containers[(int)lifetime] = lifetime switch
-                {
-                    ServiceLifetime.Transient => new TransientContainer(),
-                    ServiceLifetime.Scoped => parentContainers[lifetime].CreateDerivedContainer(),
-                    ServiceLifetime.Singleton => parentContainers[lifetime],
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-            }
+            _singletonContainer = parentContainers._singletonContainer;
+            _scopedContainer = parentContainers._scopedContainer.CreateDerivedContainer();
         }
 
         public void Dispose()
         {
-            foreach (ServiceLifetime lifetime in LifetimeValues)
+            _scopedContainer.Dispose();
+            
+            if (!_isDerived)
             {
-                if (_isDerived && lifetime == ServiceLifetime.Singleton) continue;
-                
-                this[lifetime].Dispose();
+                _singletonContainer.Dispose();
             }
         }
 
@@ -63,6 +45,45 @@ namespace YouInject
             return derivedContainer;
         }
 
-        internal IServiceContainer this[ServiceLifetime lifetime] => _containers[(int)lifetime];
+        internal void AddDecision(object decision, IServiceDescriptor descriptor)
+        {
+            Assert.IsNotNull(decision);
+            
+            if (TryGetContainer(descriptor.Lifetime, out var container))
+            {
+                container.AddDecision(decision, descriptor.ServiceType);
+            }
+        }
+
+        internal bool TryGetDecision(IServiceDescriptor descriptor, [MaybeNullWhen(false)] out object decision)
+        {
+            if (TryGetContainer(descriptor.Lifetime, out var container))
+            {
+                return container.TryGetDecision(descriptor.ServiceType, out decision);
+            }
+
+            decision = null;
+            return false;
+        }
+
+        private bool TryGetContainer(
+            ServiceLifetime lifetime, 
+            [MaybeNullWhen(false)] out IServiceContainer container)
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Transient:
+                    container = null;
+                    return false;
+                case ServiceLifetime.Scoped:
+                    container = _scopedContainer;
+                    return true;
+                case ServiceLifetime.Singleton:
+                    container = _singletonContainer;
+                    return true;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(lifetime), lifetime, null);
+            }
+        }
     }
 }
