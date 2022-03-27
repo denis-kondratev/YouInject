@@ -4,10 +4,7 @@ namespace YouInject
 {
     public interface IScope : IDisposable
     {
-        IServiceProvider GetServiceProvider();
-
-        IComponentInjector GetComponentInjector();
-        
-        IScope CreateScope();
+        IServiceProvider ServiceProvider { get; }
+        IScope CreateDerivedScope();
     }
 }
