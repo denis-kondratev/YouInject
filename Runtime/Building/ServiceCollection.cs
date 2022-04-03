@@ -6,10 +6,10 @@ namespace YouInject
 {
     internal class ServiceCollection : IServiceCollection
     {
-        private readonly List<IServiceDescriptor> _descriptors;
+        private readonly List<IRawServiceDescriptor> _descriptors;
         private bool _isBaked;
         
-        internal IReadOnlyList<IServiceDescriptor> Descriptors
+        internal IReadOnlyList<IRawServiceDescriptor> Descriptors
         {
             get
             {
@@ -20,7 +20,7 @@ namespace YouInject
 
         internal ServiceCollection()
         {
-            _descriptors = new List<IServiceDescriptor>();
+            _descriptors = new List<IRawServiceDescriptor>();
         }
 
         public void AddSingleton<TService, TDecision>()
@@ -75,8 +75,18 @@ namespace YouInject
             return AddComponent(serviceType, serviceType);
         }
 
+        public void AddFactory<TFactory, TProduct>()
+        {
+            Assert.IsFalse(_isBaked, $"Cannot add the {typeof(TFactory).Name}, the host is already built.");
+            var serviceType = typeof(TFactory);
+            var productType = typeof(TProduct);
+            var descriptor = new FactoryDescriptor(serviceType, productType);
+            _descriptors.Add(descriptor);
+        }
+
         internal BakedServiceCollection Bake()
         {
+            Assert.IsFalse(_isBaked, $"Cannot bake the {nameof(ServiceCollection)}, it has already baked.");
             _isBaked = true;
             var bakedServices = new BakedServiceCollection(this);
             return bakedServices;
@@ -94,8 +104,8 @@ namespace YouInject
         {
             Assert.IsFalse(_isBaked, $"Cannot add the '{serviceType.Name}' service, the host is already built.");
             Assert.IsFalse(_isBaked);
-            var record = new ServiceDescriptor(serviceType, decisionType, lifetime);
-            _descriptors.Add(record);
+            var descriptor = new ServiceDescriptor(serviceType, decisionType, lifetime);
+            _descriptors.Add(descriptor);
         }
     }
 }

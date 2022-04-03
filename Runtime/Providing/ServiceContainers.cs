@@ -70,20 +70,15 @@ namespace YouInject
             ServiceLifetime lifetime, 
             [MaybeNullWhen(false)] out IServiceContainer container)
         {
-            switch (lifetime)
+            container = lifetime switch
             {
-                case ServiceLifetime.Transient:
-                    container = null;
-                    return false;
-                case ServiceLifetime.Scoped:
-                    container = _scopedContainer;
-                    return true;
-                case ServiceLifetime.Singleton:
-                    container = _singletonContainer;
-                    return true;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(lifetime), lifetime, null);
-            }
+                ServiceLifetime.Transient => null,
+                ServiceLifetime.Scoped => _scopedContainer,
+                ServiceLifetime.Singleton => _singletonContainer,
+                _ => throw new ArgumentOutOfRangeException(nameof(lifetime), lifetime, null)
+            };
+
+            return container is not null;
         }
     }
 }

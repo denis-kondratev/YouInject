@@ -7,5 +7,6 @@ namespace YouInject
         Type ServiceType { get; }
         Type DecisionType { get; }
         ServiceLifetime Lifetime { get; }
+        object InstantiateDecision(ServiceProvider serviceProvider);
     }
 }

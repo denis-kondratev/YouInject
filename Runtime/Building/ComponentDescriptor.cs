@@ -7,19 +7,22 @@ using UnityEngine.Assertions;
 
 namespace YouInject
 {
-    internal partial class ComponentDescriptor : IServiceDescriptor
+    internal partial class ComponentDescriptor : IRawServiceDescriptor, IServiceDescriptor
     {
         public static readonly Type ComponentType = typeof(Component);
         private readonly MethodInfo? _initialisingMethod;
-        internal IReadOnlyList<Type> ParameterTypes { get; }
+        private bool _isBaked;
 
         public Type ServiceType { get; }
         public Type DecisionType { get; }
         public ServiceLifetime Lifetime { get; private set; }
-        
+
+        internal IReadOnlyList<Type> ParameterTypes { get; }
+
         public ComponentDescriptor(Type serviceType, Type decisionType)
         {
             Assert.IsTrue(decisionType.IsSubclassOf(ComponentType));
+            Assert.IsTrue(serviceType.IsAssignableFrom(decisionType));
             
             ServiceType = serviceType;
             DecisionType = decisionType;
@@ -28,14 +31,28 @@ namespace YouInject
             Lifetime = ServiceLifetime.Scoped;
         }
 
-        internal void InitializeComponent(Component component, object[] parameters)
+        public IServiceDescriptor Bake()
         {
-            _initialisingMethod?.Invoke(component, parameters);
+            Assert.IsFalse(_isBaked);
+            _isBaked = true;
+            return this;
+        }
+
+        public object InstantiateDecision(ServiceProvider serviceProvider)
+        {
+            throw new NotImplementedException();
         }
 
         internal IComponentDescriptorBuilder GetBuilder()
         {
+            Assert.IsFalse(_isBaked);
             return new Builder(this);
+        }
+
+        internal void InitializeComponent(Component component, object[] parameters)
+        {
+            Assert.IsTrue(_isBaked);
+            _initialisingMethod?.Invoke(component, parameters);
         }
 
         private static MethodInfo? GetInitializingMethod(Type decisionType)
@@ -67,7 +84,6 @@ namespace YouInject
 
             var parameters = method.GetParameters();
             var types = parameters.Select(parameter => parameter.ParameterType).ToArray();
-
             return types;
         }
     }

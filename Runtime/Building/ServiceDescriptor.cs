@@ -4,8 +4,9 @@ using UnityEngine.Assertions;
 
 namespace YouInject
 {
-    internal class ServiceDescriptor : IServiceDescriptor
+    internal class ServiceDescriptor : IRawServiceDescriptor, IServiceDescriptor
     {
+        private bool _isBaked;
         private readonly Type[] _parameterTypes;
         public Type ServiceType { get; }
         public Type DecisionType { get; }
@@ -14,6 +15,7 @@ namespace YouInject
         internal ServiceDescriptor(Type serviceType, Type decisionType, ServiceLifetime lifetime)
         {
             Assert.IsFalse(decisionType.IsSubclassOf(ComponentDescriptor.ComponentType));
+            Assert.IsTrue(serviceType.IsAssignableFrom(decisionType));
             
             ServiceType = serviceType;
             DecisionType = decisionType;
@@ -21,15 +23,19 @@ namespace YouInject
             _parameterTypes = GetParameterTypes(decisionType);
         }
 
-        internal object MakeDecision(ServiceProvider serviceProvider)
+        public IServiceDescriptor Bake()
         {
-            var parameters = new object[_parameterTypes.Length];
-
-            for (var i = 0; i < parameters.Length; i++)
-            {
-                parameters[i] = serviceProvider.GetDecision(_parameterTypes[i]);
-            }
+            Assert.IsFalse(_isBaked);
             
+            _isBaked = true;
+            return this;
+        }
+
+        public object InstantiateDecision(ServiceProvider serviceProvider)
+        {
+            Assert.IsTrue(_isBaked);
+
+            var parameters = serviceProvider.GetDecisions(_parameterTypes);
             var decision = Activator.CreateInstance(DecisionType, parameters);
             return decision;
         }

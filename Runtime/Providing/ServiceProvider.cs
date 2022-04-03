@@ -59,6 +59,18 @@ namespace YouInject
             return decision;
         }
 
+        internal object[] GetDecisions(Type[] serviceTypes)
+        {
+            var decisions = new object[serviceTypes.Length];
+
+            for (var i = 0; i < decisions.Length; i++)
+            {
+                decisions[i] = GetDecision(serviceTypes[i]);
+            }
+
+            return decisions;
+        }
+
         private object MakeDecision(IServiceDescriptor descriptor)
         {
             var serviceType = descriptor.ServiceType;
@@ -67,19 +79,11 @@ namespace YouInject
             {
                 var anotherType = _resolvingStack.Peek();
                 _resolvingStack.Clear();
-                throw new Exception($"Services of '{serviceType.Name} and {anotherType.Name} types refer on each other.");
+                throw new Exception($"'{serviceType.Name}' and '{anotherType.Name}' services refer on each other.");
             }
             
             _resolvingStack.Push(serviceType);
-
-            var decision = descriptor switch
-            {
-                ServiceDescriptor serviceDescriptor => serviceDescriptor.MakeDecision(this),
-                ComponentDescriptor => throw new NotImplementedException(),
-                _ => throw new Exception(
-                    $"Failed to get a decision because of an unexpected descriptor type: '{descriptor.GetType().Name}'.")
-            };
-
+            var decision = descriptor.InstantiateDecision(this);
             _containers.AddDecision(decision, descriptor);
             _resolvingStack.Pop();
             return decision;
@@ -89,7 +93,7 @@ namespace YouInject
         {
             if (_services[serviceType] is not ComponentDescriptor descriptor)
             {
-                throw new Exception($"Cannot find a {nameof(ComponentDescriptor)} for a service of the {serviceType.Name} type.");
+                throw new Exception($"Cannot find a {nameof(ComponentDescriptor)} for the '{serviceType.Name}' service.");
             }
 
             var parameters = GetDecisionsAccountingComponents(descriptor.ParameterTypes, restComponents);

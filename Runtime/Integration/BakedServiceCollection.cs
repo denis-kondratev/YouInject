@@ -12,9 +12,15 @@ namespace YouInject
         
         internal BakedServiceCollection(ServiceCollection collection)
         {
-            var descriptors = collection.Descriptors;
-            _descriptorsByDecisionType = descriptors.ToDictionary(descriptor => descriptor.DecisionType);
-            _descriptorsByServiceType  = descriptors.ToDictionary(descriptor => descriptor.ServiceType);
+            var descriptors = collection.Descriptors.Select(d => d.Bake());
+            _descriptorsByDecisionType = new Dictionary<Type, IServiceDescriptor>(collection.Descriptors.Count);
+            _descriptorsByServiceType = new Dictionary<Type, IServiceDescriptor>(collection.Descriptors.Count);
+            
+            foreach (var descriptor in descriptors)
+            {
+                _descriptorsByDecisionType.Add(descriptor.DecisionType, descriptor);
+                _descriptorsByServiceType.Add(descriptor.ServiceType, descriptor);
+            }
         }
         
         internal bool TryGetServiceTypeByDecision(object decision, [NotNullWhen(true)]out Type? serviceType)
