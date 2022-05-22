@@ -2,6 +2,6 @@
 {
     public interface IComponentDescriptorBuilder
     {
-        void AsTransient();
+        void InitializeWith(string methodName);
     }
 }

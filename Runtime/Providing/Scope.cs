@@ -30,11 +30,6 @@ namespace YouInject
             _parentScope = parentScope;
         }
 
-        public IScope CreateDerivedScope()
-        {
-            return CreateDerivedScopeInternally();
-        }
-
         public void Dispose()
         {
             if (_isDisposed)
@@ -64,7 +59,7 @@ namespace YouInject
             _serviceProvider.AddComponents(components);
         }
 
-        internal Scope CreateDerivedScopeInternally()
+        internal Scope CreateDerivedScope()
         {
             var derivedScope = new Scope(this);
             _derivedScopes.Add(derivedScope);

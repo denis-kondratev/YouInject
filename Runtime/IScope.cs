@@ -5,6 +5,5 @@ namespace YouInject
     public interface IScope : IDisposable
     {
         IServiceProvider ServiceProvider { get; }
-        IScope CreateDerivedScope();
     }
 }

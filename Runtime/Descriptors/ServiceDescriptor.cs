@@ -39,7 +39,7 @@ namespace YouInject
             var decision = Activator.CreateInstance(DecisionType, parameters);
             return decision;
         }
-
+        
         private static Type[] GetParameterTypes(Type decisionType)
         {
             var constructors = decisionType.GetConstructors();

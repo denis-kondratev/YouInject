@@ -36,7 +36,7 @@ namespace YouInject
             Assert.IsFalse(_hasBuilt, "Failed to build a scope, the builder has already been used.");
 
             _hasBuilt = true;
-            var scope = parentScope.CreateDerivedScopeInternally();
+            var scope = parentScope.CreateDerivedScope();
             scope.AddComponents(_componentsToAdd);
             return scope;
         }

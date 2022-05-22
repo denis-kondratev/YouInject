@@ -201,7 +201,7 @@ namespace YouInject
             var product = Instantiate() as TResult;
             return product!;
         }
-
+        
         private object Instantiate()
         {
             var instance = Activator.CreateInstance(_resultType, _args);

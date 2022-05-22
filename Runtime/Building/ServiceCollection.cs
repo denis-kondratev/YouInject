@@ -8,19 +8,19 @@ namespace YouInject
     {
         private readonly List<IRawServiceDescriptor> _descriptors;
         private bool _isBaked;
-        
-        internal IReadOnlyList<IRawServiceDescriptor> Descriptors
-        {
-            get
-            {
-                Assert.IsTrue(_isBaked, "Cannot get the records of the collection. It hasn't been baked yet.");
-                return _descriptors;
-            }
-        }
 
         internal ServiceCollection()
         {
             _descriptors = new List<IRawServiceDescriptor>();
+        }
+
+        internal IReadOnlyList<IRawServiceDescriptor> Descriptors
+        {
+            get
+            {
+                Assert.IsTrue(_isBaked, $"Cannot get the '{nameof(Descriptors)}' of the {nameof(ServiceCollection)}. It hasn't been baked yet. See method '{nameof(Bake)}'");
+                return _descriptors;
+            }
         }
 
         public void AddSingleton<TService, TDecision>()
@@ -48,20 +48,7 @@ namespace YouInject
             var serviceType = typeof(TService);
             AddService(serviceType, serviceType, ServiceLifetime.Scoped);
         }
-
-        public void AddTransient<TService, TDecision>()
-        {
-            var serviceType = typeof(TService);
-            var decision = typeof(TDecision);
-            AddService(serviceType, decision, ServiceLifetime.Transient);
-        }
-
-        public void AddTransient<TService>()
-        {
-            var serviceType = typeof(TService);
-            AddService(serviceType, serviceType, ServiceLifetime.Transient);
-        }
-
+        
         public IComponentDescriptorBuilder AddComponent<TService, TDecision>()
         {
             var serviceType = typeof(TService);

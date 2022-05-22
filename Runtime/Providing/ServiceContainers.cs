@@ -66,9 +66,7 @@ namespace YouInject
             return false;
         }
 
-        private bool TryGetContainer(
-            ServiceLifetime lifetime, 
-            [MaybeNullWhen(false)] out IServiceContainer container)
+        private bool TryGetContainer(ServiceLifetime lifetime, [MaybeNullWhen(false)] out IServiceContainer container)
         {
             container = lifetime switch
             {

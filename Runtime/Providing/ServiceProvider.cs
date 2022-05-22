@@ -46,19 +46,6 @@ namespace YouInject
             }
         }
 
-        internal object GetDecision(Type serviceType)
-        {
-            var descriptor = _services[serviceType];
-
-            if (_containers.TryGetDecision(descriptor, out var decision))
-            {
-                return decision;
-            }
-
-            decision = MakeDecision(descriptor);
-            return decision;
-        }
-
         internal object[] GetDecisions(Type[] serviceTypes)
         {
             var decisions = new object[serviceTypes.Length];
@@ -69,6 +56,19 @@ namespace YouInject
             }
 
             return decisions;
+        }
+
+        private object GetDecision(Type serviceType)
+        {
+            var descriptor = _services[serviceType];
+
+            if (_containers.TryGetDecision(descriptor, out var decision))
+            {
+                return decision;
+            }
+
+            decision = MakeDecision(descriptor);
+            return decision;
         }
 
         private object MakeDecision(IServiceDescriptor descriptor)
@@ -96,8 +96,12 @@ namespace YouInject
                 throw new Exception($"Cannot find a {nameof(ComponentDescriptor)} for the '{serviceType.Name}' service.");
             }
 
-            var parameters = GetDecisionsAccountingComponents(descriptor.ParameterTypes, restComponents);
-            descriptor.InitializeComponent(component, parameters);
+            if (descriptor.InitializingParameterTypes is not null)
+            {
+                var parameters = GetDecisionsAccountingComponents(descriptor.InitializingParameterTypes, restComponents);
+                descriptor.InitializeComponent(component, parameters);
+            }
+            
             _containers.AddDecision(component, descriptor);
         }
 
