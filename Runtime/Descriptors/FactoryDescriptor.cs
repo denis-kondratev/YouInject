@@ -24,12 +24,15 @@ namespace YouInject
         public IServiceDescriptor Bake()
         {
             Assert.IsFalse(_isBaked);
+            
             _isBaked = true;
             return this;
         }
 
         public object InstantiateDecision(ServiceProvider serviceProvider)
         {
+            Assert.IsTrue(_isBaked);
+            
             var factory = _factoryBuilder.BuildFactory(serviceProvider);
             var factoryMethodInfo = _factoryBuilder.FactoryMethodInfo;
             var factoryDelegate = Delegate.CreateDelegate(DecisionType, factory, factoryMethodInfo, true);

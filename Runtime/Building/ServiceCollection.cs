@@ -7,11 +7,13 @@ namespace YouInject
     internal class ServiceCollection : IServiceCollection
     {
         private readonly List<IRawServiceDescriptor> _descriptors;
+        private readonly HashSet<Type> _registeredServices;
         private bool _isBaked;
 
         internal ServiceCollection()
         {
             _descriptors = new List<IRawServiceDescriptor>();
+            _registeredServices = new HashSet<Type>();
         }
 
         internal IReadOnlyList<IRawServiceDescriptor> Descriptors
@@ -71,6 +73,12 @@ namespace YouInject
             _descriptors.Add(descriptor);
         }
 
+        public bool Contains<TService>()
+        {
+            var type = typeof(TService);
+            return _registeredServices.Contains(type);
+        }
+
         internal BakedServiceCollection Bake()
         {
             Assert.IsFalse(_isBaked, $"Cannot bake the {nameof(ServiceCollection)}, it has already baked.");
@@ -84,6 +92,7 @@ namespace YouInject
             Assert.IsFalse(_isBaked, $"Cannot add the '{serviceType.Name}' component, the host is already built.");
             var descriptor = new ComponentDescriptor(serviceType, decisionType);
             _descriptors.Add(descriptor);
+            _registeredServices.Add(serviceType);
             return descriptor.GetBuilder();
         }
 
@@ -93,6 +102,7 @@ namespace YouInject
             Assert.IsFalse(_isBaked);
             var descriptor = new ServiceDescriptor(serviceType, decisionType, lifetime);
             _descriptors.Add(descriptor);
+            _registeredServices.Add(serviceType);
         }
     }
 }

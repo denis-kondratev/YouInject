@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace YouInject
 {
@@ -11,10 +10,6 @@ namespace YouInject
         private readonly Dictionary<string, Scope> _sceneScopes;
         private readonly Scope _rootScope;
         private readonly Scope _rootSceneScope;
-        
-        public IScope RootScope => _rootScope;
-        
-        [AllowNull] internal static Host Instance { get; private set; }
 
         public Host(BakedServiceCollection services)
         {
@@ -25,6 +20,9 @@ namespace YouInject
             _sceneScopes = new Dictionary<string, Scope>();
             Instance = this;
         }
+
+        public IScope RootScope => _rootScope;
+        internal static Host Instance { get; private set; } = null!;
 
         public void Dispose()
         {
@@ -52,7 +50,7 @@ namespace YouInject
             }
 
             parentScope ??= _rootSceneScope;
-            var scope = scopeBuilder.BuildScope(parentScope);
+            var scope = scopeBuilder.BuildScope(parentScope, scenePath);
             _sceneScopes.Add(scenePath, scope);
         }
 

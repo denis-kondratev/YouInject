@@ -8,32 +8,51 @@ namespace YouInject
     internal class ServiceProvider : IServiceProvider
     {
         private readonly BakedServiceCollection _services;
+        private readonly string _scopeName;
         private readonly ServiceContainers _containers;
         private readonly Stack<Type> _resolvingStack;
+        private readonly IYouInjectLogger _logger;
 
-        private ServiceProvider(BakedServiceCollection services)
+        private ServiceProvider(BakedServiceCollection services, string scopeName)
         {
             _services = services;
+            _scopeName = scopeName;
             _containers = ServiceContainers.CreateRootContainers();
             _resolvingStack = new Stack<Type>();
+            _logger = Resolve<IYouInjectLogger>();
         }
         
-        private ServiceProvider(ServiceProvider parentProvider)
+        private ServiceProvider(ServiceProvider parentProvider, string scopeName)
         {
+            _scopeName = scopeName;
             _services = parentProvider._services;
             _containers = parentProvider._containers.CreateDerivedContainers();
             _resolvingStack = new Stack<Type>();
+            _logger = Resolve<IYouInjectLogger>();
         }
 
-        internal static ServiceProvider CreateRootProvider(BakedServiceCollection services)
+        public TService Resolve<TService>()
         {
-            var provider = new ServiceProvider(services);
+            var serviceType = typeof(TService);
+            var decision = GetDecision(serviceType);
+
+            if (decision is TService service)
+            {
+                return service;
+            }
+
+            throw new Exception($"Cannot resolve '{typeof(TService).Name}' service. Decision type '{decision.GetType().Name}' is not derived from the service one.");
+        }
+        
+        internal static ServiceProvider CreateRootProvider(BakedServiceCollection services, string scopeName)
+        {
+            var provider = new ServiceProvider(services, scopeName);
             return provider;
         }
 
-        internal ServiceProvider CreateDerivedProvider()
+        internal ServiceProvider CreateDerivedProvider(string scopeName)
         {
-            return new ServiceProvider(this);
+            return new ServiceProvider(this, scopeName);
         }
 
         internal void AddComponents(Dictionary<Type, Component> components)
@@ -86,6 +105,14 @@ namespace YouInject
             var decision = descriptor.InstantiateDecision(this);
             _containers.AddDecision(decision, descriptor);
             _resolvingStack.Pop();
+
+            var logMessage = serviceType == descriptor.DecisionType
+                ? $"The service of type '{serviceType.FullName}' has been instantiated in the scope '{_scopeName}'."
+                : $"The service of type '{serviceType.FullName}' has been instantiated with decision of type '{descriptor.DecisionType.FullName}' in the scope '{_scopeName}'.";
+            
+            // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+            _logger?.Log(logMessage);
+            
             return decision;
         }
 

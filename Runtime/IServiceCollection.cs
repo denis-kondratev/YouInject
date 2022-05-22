@@ -9,5 +9,6 @@
         IComponentDescriptorBuilder AddComponent<TService, TDecision>();
         IComponentDescriptorBuilder AddComponent<TService>();
         void AddFactory<TFactory, TDecision>();
+        bool Contains<TService>();
     }
 }

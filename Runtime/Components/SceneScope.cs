@@ -4,9 +4,7 @@ namespace YouInject.Components
 {
     public class SceneScope : MonoBehaviour
     {
-#nullable disable
-        [SerializeField] private string _parentScenePath;
-#nullable restore
+        [SerializeField] private string _parentScenePath = null!;
 
         private void Awake()
         {

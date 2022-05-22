@@ -31,12 +31,12 @@ namespace YouInject
             _componentsToAdd.Add(serviceType, component);
         }
 
-        internal Scope BuildScope(Scope parentScope)
+        internal Scope BuildScope(Scope parentScope, string name)
         {
             Assert.IsFalse(_hasBuilt, "Failed to build a scope, the builder has already been used.");
 
             _hasBuilt = true;
-            var scope = parentScope.CreateDerivedScope();
+            var scope = parentScope.CreateDerivedScope(name);
             scope.AddComponents(_componentsToAdd);
             return scope;
         }

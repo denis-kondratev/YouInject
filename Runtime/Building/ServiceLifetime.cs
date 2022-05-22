@@ -1,6 +1,6 @@
 ﻿namespace YouInject
 {
-    public enum ServiceLifetime
+    internal enum ServiceLifetime
     {
         Transient = 0,
         Scoped = 1,
