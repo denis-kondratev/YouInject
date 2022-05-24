@@ -1,6 +1,6 @@
 ﻿namespace YouInject
 {
-    public static partial class StartInjecting
+    public static partial class HostUtility
     {
         private class HostBuilder : IHostBuilder
         {
@@ -19,6 +19,7 @@
                 
                 var bakedServices = _services.Bake();
                 var host = new Host(bakedServices);
+                _host = host;
                 return host;
             }
 

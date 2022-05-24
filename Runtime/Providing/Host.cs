@@ -18,12 +18,10 @@ namespace YouInject
             _rootSceneScope = _rootScope;
             _sceneScopeBuilders = new Dictionary<string, SceneScopeBuilder>();
             _sceneScopes = new Dictionary<string, Scope>();
-            Instance = this;
         }
 
         public IScope RootScope => _rootScope;
-        internal static Host Instance { get; private set; } = null!;
-
+        
         public void Dispose()
         {
             _rootScope.Dispose();

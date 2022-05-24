@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace YouInject.Components
 {
@@ -10,7 +11,7 @@ namespace YouInject.Components
 
         private void Awake()
         {
-            var scopeBuilder = Host.Instance.GetSceneScopeBuilder(gameObject.scene.path);
+            var scopeBuilder = HostUtility.GetSceneScopeBuilder(gameObject.scene.path);
             scopeBuilder.InjectComponent(_component);
         }
     }

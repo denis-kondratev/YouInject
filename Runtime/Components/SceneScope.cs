@@ -9,12 +9,12 @@ namespace YouInject.Components
         private void Awake()
         {
             var currentScenePath = gameObject.scene.path;
-            Host.Instance.BuildSceneScope(currentScenePath, _parentScenePath);
+            HostUtility.BuildSceneScope(currentScenePath, _parentScenePath);
         }
 
         private void OnDestroy()
         {
-            Host.Instance.DisposeOfSceneScope(gameObject.scene.path);
+            HostUtility.DisposeOfSceneScope(gameObject.scene.path);
         }
     }
 }
