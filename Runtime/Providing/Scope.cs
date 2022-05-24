@@ -12,7 +12,7 @@ namespace YouInject
         private readonly ServiceProvider _serviceProvider;
         private readonly IYouInjectLogger _logger;
         private bool _isDisposed;
-        
+
         protected Scope(BakedServiceCollection services, ServiceProvider serviceProvider, string name, Scope? parentScope)
         {
             _services = services;
@@ -64,8 +64,8 @@ namespace YouInject
         
         internal SceneScope CreateDerivedSceneScope(string name)
         {
-            var serviceProvider = _serviceProvider.CreateDerivedProvider(name);
-            var derivedScope = new SceneScope(_services, serviceProvider, name, this);
+            var componentProvider = _serviceProvider.CreateDerivedComponentProvider(name);
+            var derivedScope = new SceneScope(_services, componentProvider, name, this);
             _derivedScopes.Add(derivedScope);
             return derivedScope;
         }

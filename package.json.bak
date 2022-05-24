@@ -5,7 +5,7 @@
   "description": "Dependency Injection Library for Unity Game Engine",
   "unity": "2021.3",
   "unityRelease": "0f1",
-  "documentationUrl": "https://github.com/Holygoe/YouInject/blob/main/README.md",
+  "documentationUrl": "",
   "changelogUrl": "",
   "licensesUrl": "https://github.com/Holygoe/YouInject/blob/main/LICENSE",
   "keywords": [

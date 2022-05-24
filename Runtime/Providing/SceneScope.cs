@@ -1,22 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace YouInject
+﻿namespace YouInject
 {
     internal class SceneScope : Scope
     {
-        private readonly ServiceProvider _serviceProvider;
+        internal SceneScope(BakedServiceCollection services, ComponentProvider componentProvider, string name, Scope parentScope) 
+            : base(services, componentProvider, name, parentScope)
+        {
+            ComponentProvider = componentProvider;
+        }
 
-        internal SceneScope(BakedServiceCollection services, ServiceProvider serviceProvider, string name, Scope parentScope) 
-            : base(services, serviceProvider, name, parentScope)
-        {
-            _serviceProvider = serviceProvider;
-        }
-        internal void AddComponents(Dictionary<Type, Component> components)
-        {
-            _serviceProvider.AddComponents(components);
-        }
-        
+        public ComponentProvider ComponentProvider { get; }
     }
 }

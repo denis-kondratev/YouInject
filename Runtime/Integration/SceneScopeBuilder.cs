@@ -37,7 +37,7 @@ namespace YouInject
 
             _hasBuilt = true;
             var scope = parentScope.CreateDerivedSceneScope(name);
-            scope.AddComponents(_componentsToAdd);
+            scope.ComponentProvider.AddComponents(_componentsToAdd);
             return scope;
         }
     }
