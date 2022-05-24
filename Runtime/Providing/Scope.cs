@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace YouInject
 {
@@ -14,28 +12,16 @@ namespace YouInject
         private readonly ServiceProvider _serviceProvider;
         private readonly IYouInjectLogger _logger;
         private bool _isDisposed;
-
-        private Scope(BakedServiceCollection services)
+        
+        protected Scope(BakedServiceCollection services, ServiceProvider serviceProvider, string name, Scope? parentScope)
         {
-            const string name = "Root";
-            
             _services = services;
-            _serviceProvider = YouInject.ServiceProvider.CreateRootProvider(services, name);
-            _derivedScopes = new HashSet<Scope>();
-            _name = name;
-            _logger = _serviceProvider.Resolve<IYouInjectLogger>();
-            _logger.Log("Scope was created: " + name);
-        }
-
-        private Scope(Scope parentScope, string name)
-        {
-            _services = parentScope._services;
-            _serviceProvider = parentScope._serviceProvider.CreateDerivedProvider(name);
+            _serviceProvider = serviceProvider;
             _derivedScopes = new HashSet<Scope>();
             _parentScope = parentScope;
             _name = name;
             _logger = _serviceProvider.Resolve<IYouInjectLogger>();
-            _logger.Log($"The scope '{name}' has been created.");
+            _logger.Log($"{GetType().Name} '{name}' has been created.");
         }
 
         public IServiceProvider ServiceProvider => _serviceProvider;
@@ -62,18 +48,24 @@ namespace YouInject
 
         internal static Scope CreateRootScope(BakedServiceCollection services)
         {
-            var scope = new Scope(services);
+            const string scopeName = "Root";
+            var serviceProvider = YouInject.ServiceProvider.CreateRootProvider(services, scopeName);
+            var scope = new Scope(services, serviceProvider, scopeName, null);
             return scope;
-        }
-        
-        internal void AddComponents(Dictionary<Type, Component> components)
-        {
-            _serviceProvider.AddComponents(components);
         }
 
         internal Scope CreateDerivedScope(string name)
         {
-            var derivedScope = new Scope(this, name);
+            var serviceProvider = _serviceProvider.CreateDerivedProvider(name);
+            var derivedScope = new Scope(_services, serviceProvider, name, this);
+            _derivedScopes.Add(derivedScope);
+            return derivedScope;
+        }
+        
+        internal SceneScope CreateDerivedSceneScope(string name)
+        {
+            var serviceProvider = _serviceProvider.CreateDerivedProvider(name);
+            var derivedScope = new SceneScope(_services, serviceProvider, name, this);
             _derivedScopes.Add(derivedScope);
             return derivedScope;
         }
