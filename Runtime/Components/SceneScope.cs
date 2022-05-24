@@ -2,6 +2,7 @@
 
 namespace YouInject.Components
 {
+    [DefaultExecutionOrder(-500)]
     public class SceneScope : MonoBehaviour
     {
         [SerializeField] private string _parentScenePath = null!;

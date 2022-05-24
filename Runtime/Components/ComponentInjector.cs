@@ -1,14 +1,12 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace YouInject.Components
 {
+    [DefaultExecutionOrder(-510)]
     public class ComponentInjector : MonoBehaviour
     {
-#nullable disable
-        [SerializeField] private Component _component;
-#nullable restore
-
+        [SerializeField] private Component _component = null!;
+        
         private void Awake()
         {
             var scopeBuilder = HostUtility.GetSceneScopeBuilder(gameObject.scene.path);
