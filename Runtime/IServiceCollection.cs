@@ -2,10 +2,10 @@
 {
     public interface IServiceCollection
     {
-        void AddSingleton<TService, TDecision>();
-        void AddSingleton<TService>();
-        void AddScoped<TService, TDecision>();
-        void AddScoped<TService>();
+        IServiceDescriptorBuilder AddSingleton<TService, TDecision>();
+        IServiceDescriptorBuilder AddSingleton<TService>();
+        IServiceDescriptorBuilder AddScoped<TService, TDecision>();
+        IServiceDescriptorBuilder AddScoped<TService>();
         IComponentDescriptorBuilder AddComponent<TService, TDecision>();
         IComponentDescriptorBuilder AddComponent<TService>();
         void AddFactory<TFactory, TDecision>();

@@ -1,4 +1,6 @@
-﻿namespace YouInject
+﻿using System;
+
+namespace YouInject
 {
     public static partial class HostUtility
     {
@@ -15,7 +17,7 @@
 
             public IHost BuildHost()
             {
-                AddLogger();
+                AddBuiltInServices();
                 
                 var bakedServices = _services.Bake();
                 var host = new Host(bakedServices);
@@ -23,12 +25,19 @@
                 return host;
             }
 
-            private void AddLogger()
+            private void AddBuiltInServices()
             {
                 if (!_services.Contains<IYouInjectLogger>())
                 {
                     _services.AddSingleton<IYouInjectLogger, DefaultLogger>();
                 }
+                
+                if (_services.Contains<IScope>())
+                {
+                    throw new Exception();
+                }
+                
+                _services.AddScoped<IScope, Scope>().AsComponent();
             }
         }
     }

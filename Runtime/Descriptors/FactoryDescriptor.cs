@@ -10,6 +10,7 @@ namespace YouInject
         public Type ServiceType { get; }
         public Type DecisionType { get; }
         public ServiceLifetime Lifetime { get; }
+        public bool AsComponent => false;
 
         internal FactoryDescriptor(Type factoryType, Type resultType)
         {

@@ -57,6 +57,13 @@ namespace YouInject
             return new ComponentProvider(Services, scopeName, containers);
         }
 
+        internal void AddService<TService>(object decision)
+        {
+            var serviceType = typeof(TService);
+            var descriptor = Services[serviceType];
+            Containers.AddDecision(decision, descriptor);
+        }
+
         protected object MakeDecision(IServiceDescriptor descriptor)
         {
             var serviceType = descriptor.ServiceType;

@@ -20,9 +20,12 @@ namespace YouInject
             _derivedScopes = new HashSet<Scope>();
             _parentScope = parentScope;
             _name = name;
+            _serviceProvider.AddService<IScope>(this);
             _logger = _serviceProvider.Resolve<IYouInjectLogger>();
             _logger.Log($"{GetType().Name} '{name}' has been created.");
         }
+
+        public IServiceProvider ServiceProvider => _serviceProvider;
         
         public void Dispose()
         {
@@ -47,7 +50,7 @@ namespace YouInject
         internal static Scope CreateRootScope(BakedServiceCollection services)
         {
             const string scopeName = "Root";
-            var serviceProvider = ServiceProvider.CreateRootProvider(services, scopeName);
+            var serviceProvider = YouInject.ServiceProvider.CreateRootProvider(services, scopeName);
             var scope = new Scope(services, serviceProvider, scopeName, null);
             return scope;
         }

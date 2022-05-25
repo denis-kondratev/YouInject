@@ -25,30 +25,30 @@ namespace YouInject
             }
         }
 
-        public void AddSingleton<TService, TDecision>()
+        public IServiceDescriptorBuilder AddSingleton<TService, TDecision>()
         {
             var serviceType = typeof(TService);
             var decision = typeof(TDecision);
-            AddService(serviceType, decision, ServiceLifetime.Singleton);
+            return AddService(serviceType, decision, ServiceLifetime.Singleton);
         }
 
-        public void AddSingleton<TService>()
+        public IServiceDescriptorBuilder AddSingleton<TService>()
         {
             var serviceType = typeof(TService);
-            AddService(serviceType, serviceType, ServiceLifetime.Singleton);
+            return AddService(serviceType, serviceType, ServiceLifetime.Singleton);
         }
 
-        public void AddScoped<TService, TDecision>()
+        public IServiceDescriptorBuilder AddScoped<TService, TDecision>()
         {
             var serviceType = typeof(TService);
             var decision = typeof(TDecision);
-            AddService(serviceType, decision, ServiceLifetime.Scoped);
+            return AddService(serviceType, decision, ServiceLifetime.Scoped);
         }
 
-        public void AddScoped<TService>()
+        public IServiceDescriptorBuilder AddScoped<TService>()
         {
             var serviceType = typeof(TService);
-            AddService(serviceType, serviceType, ServiceLifetime.Scoped);
+            return AddService(serviceType, serviceType, ServiceLifetime.Scoped);
         }
         
         public IComponentDescriptorBuilder AddComponent<TService, TDecision>()
@@ -96,13 +96,14 @@ namespace YouInject
             return descriptor.GetBuilder();
         }
 
-        private void AddService(Type serviceType, Type decisionType, ServiceLifetime lifetime)
+        private IServiceDescriptorBuilder AddService(Type serviceType, Type decisionType, ServiceLifetime lifetime)
         {
             Assert.IsFalse(_isBaked, $"Cannot add the '{serviceType.Name}' service, the host is already built.");
             Assert.IsFalse(_isBaked);
             var descriptor = new ServiceDescriptor(serviceType, decisionType, lifetime);
             _descriptors.Add(descriptor);
             _registeredServices.Add(serviceType);
+            return descriptor.GetBuilder();
         }
     }
 }

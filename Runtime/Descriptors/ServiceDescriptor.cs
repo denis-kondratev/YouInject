@@ -4,13 +4,14 @@ using UnityEngine.Assertions;
 
 namespace YouInject
 {
-    internal class ServiceDescriptor : IRawServiceDescriptor, IServiceDescriptor
+    internal partial class ServiceDescriptor : IRawServiceDescriptor, IServiceDescriptor
     {
         private bool _isBaked;
         private readonly Type[] _parameterTypes;
         public Type ServiceType { get; }
         public Type DecisionType { get; }
         public ServiceLifetime Lifetime { get; }
+        public bool AsComponent { get; private set; }
 
         internal ServiceDescriptor(Type serviceType, Type decisionType, ServiceLifetime lifetime)
         {
@@ -38,6 +39,12 @@ namespace YouInject
             var parameters = getParameters(_parameterTypes);
             var decision = Activator.CreateInstance(DecisionType, parameters);
             return decision;
+        }
+        
+        internal IServiceDescriptorBuilder GetBuilder()
+        {
+            Assert.IsFalse(_isBaked);
+            return new Builder(this);
         }
         
         private static Type[] GetParameterTypes(Type decisionType)

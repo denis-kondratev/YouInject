@@ -15,7 +15,7 @@ namespace YouInject
         {
             Assert.IsNotNull(decision);
 
-            if (descriptor is ComponentDescriptor)
+            if (descriptor.AsComponent)
             {
                 base.AddDecision(decision, descriptor);
                 return;

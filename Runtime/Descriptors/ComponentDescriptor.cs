@@ -28,6 +28,7 @@ namespace YouInject
         public Type DecisionType { get; }
 
         public ServiceLifetime Lifetime { get; }
+        public bool AsComponent => true;
 
         internal IReadOnlyList<Type>? InitializingParameterTypes => _initializingParameterTypes;
 
