@@ -10,9 +10,8 @@ namespace YouInject
         internal ComponentProvider(
             BakedServiceCollection services,
             string scopeName,
-            ServiceContainers containers,
-            ServiceProvider parentProvider) 
-            : base(services, scopeName, containers, parentProvider)
+            ServiceContainers containers) 
+            : base(services, scopeName, containers)
         {
         }
         

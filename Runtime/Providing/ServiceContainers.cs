@@ -16,7 +16,7 @@ namespace YouInject
             _scopedContainer = new Container();
         }
         
-        private ServiceContainers(ServiceContainers parentContainers)
+        protected ServiceContainers(ServiceContainers parentContainers)
         {
             _isDerived = true;
             _singletonContainer = parentContainers._singletonContainer;
@@ -44,8 +44,14 @@ namespace YouInject
             var derivedContainer = new ServiceContainers(this);
             return derivedContainer;
         }
+        
+        internal ComponentContainers CreateDerivedComponentContainers()
+        {
+            var derivedContainer = new ComponentContainers(this);
+            return derivedContainer;
+        }
 
-        internal void AddDecision(object decision, IServiceDescriptor descriptor)
+        internal virtual void AddDecision(object decision, IServiceDescriptor descriptor)
         {
             Assert.IsNotNull(decision);
             
