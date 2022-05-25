@@ -7,9 +7,9 @@ namespace YouInject
     {
         protected readonly BakedServiceCollection Services;
         protected readonly ServiceContainers Containers;
+        protected readonly ServiceProvider? ParentProvider;
         private readonly string _scopeName;
         private readonly Stack<Type> _resolvingStack;
-        private readonly ServiceProvider? _parentProvider;
         private readonly IYouInjectLogger _logger;
 
         protected ServiceProvider(
@@ -21,7 +21,7 @@ namespace YouInject
             _scopeName = scopeName;
             Services = services;
             Containers = containers;
-            _parentProvider = parentProvider;
+            ParentProvider = parentProvider;
             _resolvingStack = new Stack<Type>();
             _logger = Resolve<IYouInjectLogger>();
         }
@@ -97,8 +97,7 @@ namespace YouInject
             }
             
             _resolvingStack.Push(serviceType);
-            var decision = descriptor.InstantiateDecision(this);
-            Containers.AddDecision(decision, descriptor);
+            var decision = InstantiateDecision(descriptor);
             _resolvingStack.Pop();
 
             var logMessage = serviceType == descriptor.DecisionType
@@ -107,6 +106,14 @@ namespace YouInject
             
             // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
             _logger?.Log(logMessage);
+            
+            return decision;
+        }
+
+        protected virtual object InstantiateDecision(IServiceDescriptor descriptor)
+        {
+            var decision = descriptor.InstantiateDecision(GetDecisions);
+            Containers.AddDecision(decision, descriptor);
             
             return decision;
         }

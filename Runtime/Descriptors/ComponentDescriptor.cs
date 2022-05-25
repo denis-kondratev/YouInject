@@ -38,7 +38,7 @@ namespace YouInject
             return this;
         }
 
-        public object InstantiateDecision(ServiceProvider serviceProvider)
+        public object InstantiateDecision(Func<Type[], object[]> getParameters)
         {
             throw new NotImplementedException();
         }

@@ -31,11 +31,11 @@ namespace YouInject
             return this;
         }
 
-        public object InstantiateDecision(ServiceProvider serviceProvider)
+        public object InstantiateDecision(Func<Type[], object[]> getParameters)
         {
             Assert.IsTrue(_isBaked);
 
-            var parameters = serviceProvider.GetDecisions(_parameterTypes);
+            var parameters = getParameters(_parameterTypes);
             var decision = Activator.CreateInstance(DecisionType, parameters);
             return decision;
         }

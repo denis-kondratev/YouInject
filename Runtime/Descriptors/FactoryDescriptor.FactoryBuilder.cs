@@ -31,9 +31,9 @@ namespace YouInject
                 FactoryMethodInfo = GetFactoryMethodInfo(factoryDelegate.ReturnType, delegateArgTypes);
             }
 
-            public Factory BuildFactory(ServiceProvider serviceProvider)
+            public Factory BuildFactory(Func<Type[], object[]> getParameters)
             {
-                var steadyArgs = serviceProvider.GetDecisions(_steadyArgTypes);
+                var steadyArgs = getParameters(_steadyArgTypes);
                 var factory = new Factory(_resultType, steadyArgs, _argCount);
                 
                 return factory;

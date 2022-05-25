@@ -29,11 +29,11 @@ namespace YouInject
             return this;
         }
 
-        public object InstantiateDecision(ServiceProvider serviceProvider)
+        public object InstantiateDecision(Func<Type[], object[]> getParameters)
         {
             Assert.IsTrue(_isBaked);
             
-            var factory = _factoryBuilder.BuildFactory(serviceProvider);
+            var factory = _factoryBuilder.BuildFactory(getParameters);
             var factoryMethodInfo = _factoryBuilder.FactoryMethodInfo;
             var factoryDelegate = Delegate.CreateDelegate(DecisionType, factory, factoryMethodInfo, true);
             return factoryDelegate!;
