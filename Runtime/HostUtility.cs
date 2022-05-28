@@ -6,34 +6,24 @@ namespace YouInject
     {
         private static Host? _host;
         
-        public static IHostBuilder CreateBuilder()
+        public static IHostBuilder CreateHostBuilder()
         {
             var builder = new HostBuilder();
             return builder;
         }
-
-        public static void DestroyHost()
-        {
-            _host?.Dispose();
-            _host = null;
-        }
-
-        internal static void BuildSceneScope(string scenePath, string parentSceneScope)
+        
+        internal static SceneScope BuildSceneScope(string sceneId)
         {
             if (_host is null)
             {
-                throw new Exception($"Trying to build scene scope '{scenePath}', but the host doesn't exist.");
+                throw new Exception($"Trying to build scene scope '{sceneId}', but the host doesn't exist.");
             }
             
-            _host.BuildSceneScope(scenePath, parentSceneScope);
+            var scope = _host.BuildSceneScope(sceneId);
+            return scope;
         }
-
-        internal static void DisposeOfSceneScope(string scenePath)
-        {
-            _host?.DisposeOfSceneScope(scenePath);
-        }
-
-        internal static SceneScopeBuilder GetSceneScopeBuilder(string scenePath)
+        
+        internal static ISceneScopeBuilder GetSceneScopeBuilder(string scenePath)
         {
             if (_host is null)
             {

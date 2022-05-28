@@ -6,6 +6,7 @@ namespace YouInject
     {
         private class HostBuilder : IHostBuilder
         {
+            private const HostOptions DefaultOptions = HostOptions.UseLogs;
             private readonly ServiceCollection _services;
 
             public HostBuilder()
@@ -20,7 +21,7 @@ namespace YouInject
                 AddBuiltInServices();
                 
                 var bakedServices = _services.Bake();
-                var host = new Host(bakedServices);
+                var host = new Host(bakedServices, DefaultOptions);
                 _host = host;
                 return host;
             }
@@ -32,12 +33,8 @@ namespace YouInject
                     _services.AddSingleton<IYouInjectLogger, DefaultLogger>();
                 }
                 
-                if (_services.Contains<IScope>())
-                {
-                    throw new Exception();
-                }
-                
                 _services.AddScoped<IScope, Scope>().AsComponent();
+                _services.AddSingleton<IHost, Host>();
             }
         }
     }

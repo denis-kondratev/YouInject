@@ -5,19 +5,47 @@ using UnityEngine.Assertions;
 
 namespace YouInject
 {
-    internal class SceneScopeBuilder
+    internal class SceneScopeBuilder : ISceneScopeBuilder
     {
+        private readonly string _sceneId;
+        private readonly Scope _parentScope;
         private readonly BakedServiceCollection _services;
-        private readonly Dictionary<Type, Component> _componentsToAdd;
+        private readonly Dictionary<Type, Component> _components;
         private bool _hasBuilt;
 
-        internal SceneScopeBuilder(BakedServiceCollection services)
+        public SceneScopeBuilder(string sceneId, IScope parentScope, BakedServiceCollection services)
         {
+            _sceneId = sceneId;
+
+            if (parentScope is not Scope scope)
+            {
+                throw new Exception($"Cannot create {nameof(SceneScopeBuilder)}. {nameof(parentScope)} must be '{nameof(Scope)}' type.");
+            }
+
+            _parentScope = scope;
             _services = services;
-            _componentsToAdd = new Dictionary<Type, Component>();
+            _components = new Dictionary<Type, Component>();
         }
 
-        internal void InjectComponent(Component component)
+        public void AddComponents(Component[] components)
+        {
+            foreach (var component in components)
+            {
+                AddComponent(component);
+            }
+        }
+
+        public SceneScope BuildScope()
+        {
+            Assert.IsFalse(_hasBuilt, "Failed to build a scope, the builder has already been used.");
+
+            _hasBuilt = true;
+            var scope = _parentScope.CreateDerivedSceneScope(_sceneId);
+            scope.ComponentProvider.AddComponents(_components);
+            return scope;
+        }
+
+        private void AddComponent(Component component)
         {
             Assert.IsFalse(_hasBuilt, $"Failed to inject a component of the '{component.GetType().Name}' " +
                                       "type, the builder has already been used.");
@@ -28,17 +56,7 @@ namespace YouInject
                                     $"{component.GetType().Name} type is not registered with the host.");
             }
 
-            _componentsToAdd.Add(serviceType, component);
-        }
-
-        internal Scope BuildScope(Scope parentScope, string name)
-        {
-            Assert.IsFalse(_hasBuilt, "Failed to build a scope, the builder has already been used.");
-
-            _hasBuilt = true;
-            var scope = parentScope.CreateDerivedSceneScope(name);
-            scope.ComponentProvider.AddComponents(_componentsToAdd);
-            return scope;
+            _components.Add(serviceType, component);
         }
     }
 }
