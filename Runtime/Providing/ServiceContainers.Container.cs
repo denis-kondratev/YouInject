@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using UnityEngine.Assertions;
 
 namespace YouInject
@@ -35,8 +36,8 @@ namespace YouInject
             {
                 return new DerivedContainer(this);
             }
-
-            public void Dispose()
+            
+            public async ValueTask DisposeAsync()
             {
                 if (_isDisposed) return;
 
@@ -47,6 +48,11 @@ namespace YouInject
                     if (decision is IDisposable disposable)
                     {
                         disposable.Dispose();
+                    }
+
+                    if (decision is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync();
                     }
                 }
                 

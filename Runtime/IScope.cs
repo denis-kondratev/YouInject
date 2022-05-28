@@ -2,9 +2,9 @@
 
 namespace YouInject
 {
-    public interface IScope : IDisposable
+    public interface IScope : IAsyncDisposable
     {
         IServiceProvider ServiceProvider { get; }
-        IScope CreateDerivedScope(string name);
+        IScope CreateDerivedServiceScope(string name);
     }
 }

@@ -41,7 +41,7 @@ namespace YouInject
 
         public object InstantiateDecision(Func<Type[], object[]> getParameters)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException($"Cannot instantiate a component of type '{DecisionType.Name}' by resolving. Use factories for it.");
         }
 
         internal IComponentDescriptorBuilder GetBuilder()

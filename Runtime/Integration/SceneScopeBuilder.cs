@@ -8,7 +8,7 @@ namespace YouInject
     internal class SceneScopeBuilder : ISceneScopeBuilder
     {
         private readonly string _sceneId;
-        private readonly Scope _parentScope;
+        private readonly ServiceScope _parentScope;
         private readonly BakedServiceCollection _services;
         private readonly Dictionary<Type, Component> _components;
         private bool _hasBuilt;
@@ -17,9 +17,9 @@ namespace YouInject
         {
             _sceneId = sceneId;
 
-            if (parentScope is not Scope scope)
+            if (parentScope is not ServiceScope scope)
             {
-                throw new Exception($"Cannot create {nameof(SceneScopeBuilder)}. {nameof(parentScope)} must be '{nameof(Scope)}' type.");
+                throw new Exception($"Cannot create {nameof(SceneScopeBuilder)}. {nameof(parentScope)} must be '{nameof(ServiceScope)}' type.");
             }
 
             _parentScope = scope;

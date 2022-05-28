@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace YouInject
 {
@@ -35,7 +36,12 @@ namespace YouInject
 
             throw new Exception($"Cannot resolve '{typeof(TService).Name}' service. Decision type '{decision.GetType().Name}' is not derived from the service one.");
         }
-        
+
+        public async ValueTask DisposeAsync()
+        {
+            await Containers.DisposeAsync();
+        }
+
         internal static ServiceProvider CreateRootProvider(
             BakedServiceCollection services,
             string scopeName)
@@ -45,12 +51,12 @@ namespace YouInject
             return provider;
         }
 
-        internal ServiceProvider CreateDerivedProvider(string scopeName)
+        internal ServiceProvider CreateDerivedServiceProvider(string scopeName)
         {
             var containers = Containers.CreateDerivedContainers();
             return new ServiceProvider(Services, scopeName, containers);
         }
-        
+
         internal ComponentProvider CreateDerivedComponentProvider(string scopeName)
         {
             var containers = Containers.CreateDerivedComponentContainers();
@@ -77,6 +83,7 @@ namespace YouInject
             
             _resolvingStack.Push(serviceType);
             var decision = descriptor.InstantiateDecision(GetDecisions);
+            
             Containers.AddDecision(decision, descriptor);
             _resolvingStack.Pop();
 

@@ -9,21 +9,21 @@ namespace YouInject
         private readonly BakedServiceCollection _services;
         private readonly HostOptions _options;
         private readonly Dictionary<string, SceneScopeBuilder> _sceneScopeBuilders;
-        private readonly Scope _rootScope;
+        private readonly ServiceScope _rootScope;
 
         public Host(BakedServiceCollection services, HostOptions options)
         {
             _services = services;
             _options = options;
             _sceneScopeBuilders = new Dictionary<string, SceneScopeBuilder>();
-            _rootScope = Scope.CreateRootScope(services, this);
+            _rootScope = ServiceScope.CreateRootScope(services, this);
         }
 
         public IScope RootScope => _rootScope;
         
         public async ValueTask DisposeAsync()
         {
-            _rootScope.Dispose();
+            await _rootScope.DisposeAsync();
         }
 
         public void AddSceneScopeBuilder(string sceneId, IScope parentScope)

@@ -16,9 +16,9 @@ namespace YouInject.Components
             _scope = HostUtility.BuildSceneScope(_sceneId);
         }
 
-        private void OnDestroy()
+        private async void OnDestroy()
         {
-            _scope.Dispose();
+            await _scope.DisposeAsync();
         }
     }
 }

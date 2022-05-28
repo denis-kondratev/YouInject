@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using UnityEngine.Assertions;
 
 namespace YouInject
 {
-    internal partial class ServiceContainers : IDisposable
+    internal partial class ServiceContainers : IAsyncDisposable
     {
         private readonly IServiceContainer _singletonContainer;
         private readonly IServiceContainer _scopedContainer;
         private readonly bool _isDerived;
+        private bool _isDisposed;
 
         private ServiceContainers()
         {
@@ -22,14 +24,20 @@ namespace YouInject
             _singletonContainer = parentContainers._singletonContainer;
             _scopedContainer = parentContainers._scopedContainer.CreateDerivedContainer();
         }
-
-        public void Dispose()
+        
+        public async ValueTask DisposeAsync()
         {
-            _scopedContainer.Dispose();
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
+            await _scopedContainer.DisposeAsync();
             
             if (!_isDerived)
             {
-                _singletonContainer.Dispose();
+                await _singletonContainer.DisposeAsync();
             }
         }
 
@@ -44,7 +52,7 @@ namespace YouInject
             var derivedContainer = new ServiceContainers(this);
             return derivedContainer;
         }
-        
+
         internal ComponentContainers CreateDerivedComponentContainers()
         {
             var derivedContainer = new ComponentContainers(this);

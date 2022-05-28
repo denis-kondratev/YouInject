@@ -33,7 +33,7 @@ namespace YouInject
                     _services.AddSingleton<IYouInjectLogger, DefaultLogger>();
                 }
                 
-                _services.AddScoped<IScope, Scope>().AsComponent();
+                _services.AddScoped<IScope, ServiceScope>().AsComponent();
                 _services.AddSingleton<IHost, Host>();
             }
         }

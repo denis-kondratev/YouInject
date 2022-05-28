@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace YouInject
 {
-    internal class Scope : IScope
+    internal abstract class Scope : IScope
     {
         private readonly Scope? _parentScope;
         private readonly string _name;
@@ -27,40 +28,37 @@ namespace YouInject
 
         public IServiceProvider ServiceProvider => _serviceProvider;
         
-        public void Dispose()
+        public IScope CreateDerivedServiceScope(string name)
         {
-            if (_isDisposed)
-            {
-                return;
-            }
+            var serviceProvider = _serviceProvider.CreateDerivedServiceProvider(name);
+            var derivedScope = new ServiceScope(_services, serviceProvider, name, this);
+            _derivedScopes.Add(derivedScope);
+            return derivedScope;
+        }
+        
+        public virtual async ValueTask DisposeAsync()
+        {
+            if (_isDisposed) return;
 
             _isDisposed = true;
             
             while (_derivedScopes.Count > 0)
             {
                 var scope = _derivedScopes.First();
-                scope.Dispose();
+                await scope.DisposeAsync();
             }
 
+            await _serviceProvider.DisposeAsync();
             _parentScope?.RemoveDerivedScope(this);
-            
             _logger.Log($"The {GetType().Name} '{_name}' has been disposed of.");
         }
 
-        public IScope CreateDerivedScope(string name)
-        {
-            var serviceProvider = _serviceProvider.CreateDerivedProvider(name);
-            var derivedScope = new Scope(_services, serviceProvider, name, this);
-            _derivedScopes.Add(derivedScope);
-            return derivedScope;
-        }
-
-        internal static Scope CreateRootScope(BakedServiceCollection services, Host host)
+        internal static ServiceScope CreateRootScope(BakedServiceCollection services, Host host)
         {
             const string scopeName = "Root";
             var serviceProvider = YouInject.ServiceProvider.CreateRootProvider(services, scopeName);
             serviceProvider.AddService<IHost>(host);
-            var scope = new Scope(services, serviceProvider, scopeName, null);
+            var scope = new ServiceScope(services, serviceProvider, scopeName, null);
             return scope;
         }
 
