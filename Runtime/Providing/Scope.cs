@@ -47,6 +47,14 @@ namespace YouInject
             _logger.Log($"The scope '{_name}' has been disposed of.");
         }
 
+        public IScope CreateDerivedScope(string name)
+        {
+            var serviceProvider = _serviceProvider.CreateDerivedProvider(name);
+            var derivedScope = new Scope(_services, serviceProvider, name, this);
+            _derivedScopes.Add(derivedScope);
+            return derivedScope;
+        }
+
         internal static Scope CreateRootScope(BakedServiceCollection services)
         {
             const string scopeName = "Root";
@@ -55,14 +63,6 @@ namespace YouInject
             return scope;
         }
 
-        internal Scope CreateDerivedScope(string name)
-        {
-            var serviceProvider = _serviceProvider.CreateDerivedProvider(name);
-            var derivedScope = new Scope(_services, serviceProvider, name, this);
-            _derivedScopes.Add(derivedScope);
-            return derivedScope;
-        }
-        
         internal SceneScope CreateDerivedSceneScope(string name)
         {
             var componentProvider = _serviceProvider.CreateDerivedComponentProvider(name);
