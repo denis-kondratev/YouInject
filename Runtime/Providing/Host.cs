@@ -16,7 +16,7 @@ namespace YouInject
             _services = services;
             _options = options;
             _sceneScopeBuilders = new Dictionary<string, SceneScopeBuilder>();
-            _rootScope = ServiceScope.CreateRootScope(services, this);
+            _rootScope = Scope.CreateRootScope(services, this);
         }
 
         public IScope RootScope => _rootScope;
@@ -26,7 +26,7 @@ namespace YouInject
             await _rootScope.DisposeAsync();
         }
 
-        public void AddSceneScopeBuilder(string sceneId, IScope parentScope)
+        public SceneScopeBuildingTask AddSceneScopeBuilder(string sceneId, IScope parentScope)
         {
             if (_sceneScopeBuilders.ContainsKey(sceneId))
             {
@@ -35,6 +35,7 @@ namespace YouInject
             
             var builder = new SceneScopeBuilder(sceneId, parentScope, _services);
             _sceneScopeBuilders.Add(sceneId, builder);
+            return new SceneScopeBuildingTask(builder);
         }
         
         public ISceneScopeBuilder GetSceneScopeBuilder(string sceneId)

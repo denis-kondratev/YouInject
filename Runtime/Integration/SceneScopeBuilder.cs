@@ -8,16 +8,15 @@ namespace YouInject
     internal class SceneScopeBuilder : ISceneScopeBuilder
     {
         private readonly string _sceneId;
-        private readonly ServiceScope _parentScope;
+        private readonly Scope _parentScope;
         private readonly BakedServiceCollection _services;
         private readonly Dictionary<Type, Component> _components;
-        private bool _hasBuilt;
 
         public SceneScopeBuilder(string sceneId, IScope parentScope, BakedServiceCollection services)
         {
             _sceneId = sceneId;
 
-            if (parentScope is not ServiceScope scope)
+            if (parentScope is not Scope scope)
             {
                 throw new Exception($"Cannot create {nameof(SceneScopeBuilder)}. {nameof(parentScope)} must be '{nameof(ServiceScope)}' type.");
             }
@@ -26,6 +25,12 @@ namespace YouInject
             _services = services;
             _components = new Dictionary<Type, Component>();
         }
+        
+        public SceneScope? Result { get; private set; }
+        
+        public  bool IsUsed { get; private set; }
+
+        public event Action<SceneScope?>? Completed;
 
         public void AddComponents(Component[] components)
         {
@@ -37,17 +42,27 @@ namespace YouInject
 
         public SceneScope BuildScope()
         {
-            Assert.IsFalse(_hasBuilt, "Failed to build a scope, the builder has already been used.");
+            Assert.IsFalse(IsUsed, "Failed to build a scope, the builder has already been used.");
 
-            _hasBuilt = true;
+            IsUsed = true;
             var scope = _parentScope.CreateDerivedSceneScope(_sceneId);
             scope.ComponentProvider.AddComponents(_components);
+            Result = scope;
+            Completed?.Invoke(scope);
             return scope;
         }
 
+        public void Dispose()
+        {
+            if (IsUsed) return;
+
+            IsUsed = true;
+            Completed?.Invoke(null);
+        }
+        
         private void AddComponent(Component component)
         {
-            Assert.IsFalse(_hasBuilt, $"Failed to inject a component of the '{component.GetType().Name}' " +
+            Assert.IsFalse(IsUsed, $"Failed to inject a component of the '{component.GetType().Name}' " +
                                       "type, the builder has already been used.");
 
             if (!_services.TryGetServiceTypeByDecision(component, out var serviceType))
