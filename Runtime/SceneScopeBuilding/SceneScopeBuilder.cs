@@ -28,7 +28,7 @@ namespace YouInject
         
         public SceneScope? Result { get; private set; }
         
-        public  bool IsUsed { get; private set; }
+        public  bool IsCompleted { get; private set; }
 
         public event Action<SceneScope?>? Completed;
 
@@ -42,9 +42,9 @@ namespace YouInject
 
         public SceneScope BuildScope()
         {
-            Assert.IsFalse(IsUsed, "Failed to build a scope, the builder has already been used.");
+            Assert.IsFalse(IsCompleted, "Failed to build a scope, the builder has already been used.");
 
-            IsUsed = true;
+            IsCompleted = true;
             var scope = _parentScope.CreateDerivedSceneScope(_sceneId);
             scope.ComponentProvider.AddComponents(_components);
             Result = scope;
@@ -54,15 +54,15 @@ namespace YouInject
 
         public void Dispose()
         {
-            if (IsUsed) return;
+            if (IsCompleted) return;
 
-            IsUsed = true;
+            IsCompleted = true;
             Completed?.Invoke(null);
         }
         
         private void AddComponent(Component component)
         {
-            Assert.IsFalse(IsUsed, $"Failed to inject a component of the '{component.GetType().Name}' " +
+            Assert.IsFalse(IsCompleted, $"Failed to inject a component of the '{component.GetType().Name}' " +
                                       "type, the builder has already been used.");
 
             if (!_services.TryGetServiceTypeByDecision(component, out var serviceType))

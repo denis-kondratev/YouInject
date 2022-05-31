@@ -5,5 +5,7 @@
         IServiceCollection Services { get; }
         
         IHost BuildHost();
+
+        void AddSceneLoader(ISceneLoader sceneLoader);
     }
 }

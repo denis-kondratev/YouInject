@@ -8,6 +8,7 @@ namespace YouInject
         {
             private const HostOptions DefaultOptions = HostOptions.UseLogs;
             private readonly ServiceCollection _services;
+            private ISceneLoader? _sceneLoader;
 
             public HostBuilder()
             {
@@ -21,9 +22,20 @@ namespace YouInject
                 AddBuiltInServices();
                 
                 var bakedServices = _services.Bake();
-                var host = new Host(bakedServices, DefaultOptions);
+                _sceneLoader ??= new DefaultSceneLoader();
+                var host = new Host(bakedServices, _sceneLoader, DefaultOptions);
                 _host = host;
                 return host;
+            }
+
+            public void AddSceneLoader(ISceneLoader sceneLoader)
+            {
+                if (_sceneLoader is not null)
+                {
+                    throw new Exception($"Trying to add {nameof(ISceneLoader)}, but it already exists");
+                }
+
+                _sceneLoader = sceneLoader;
             }
 
             private void AddBuiltInServices()

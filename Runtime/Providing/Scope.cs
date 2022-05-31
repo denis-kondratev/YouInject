@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -53,7 +54,7 @@ namespace YouInject
             _logger.Log($"The {GetType().Name} '{_name}' has been disposed of.");
         }
 
-        internal static ServiceScope CreateRootScope(BakedServiceCollection services, Host host)
+        public static ServiceScope CreateRootScope(BakedServiceCollection services, Host host)
         {
             const string scopeName = "Root";
             var serviceProvider = YouInject.ServiceProvider.CreateRootProvider(services, scopeName);
@@ -62,12 +63,32 @@ namespace YouInject
             return scope;
         }
 
-        internal SceneScope CreateDerivedSceneScope(string name)
+        public SceneScope CreateDerivedSceneScope(string name)
         {
             var componentProvider = _serviceProvider.CreateDerivedComponentProvider(name);
             var derivedScope = new SceneScope(_services, componentProvider, name, this);
             _derivedScopes.Add(derivedScope);
             return derivedScope;
+        }
+
+        public bool TryGetSceneScope(string sceneId, [MaybeNullWhen(false)] out SceneScope scope)
+        {
+            if (_derivedScopes.Count == 0)
+            {
+                scope = null;
+                return false;
+            }
+
+            foreach (var derivedScope in _derivedScopes)
+            {
+                if (derivedScope.TryGetSceneScope(sceneId, out scope))
+                {
+                    return true;
+                }
+            }
+            
+            scope = null;
+            return false;
         }
 
         private void RemoveDerivedScope(Scope derivedScope)

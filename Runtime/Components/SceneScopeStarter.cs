@@ -7,13 +7,11 @@ namespace YouInject.Components
     {
         [SerializeField] private string _sceneId = null!;
         [SerializeField] private Component[] _components = null!;
-        private SceneScope _scope = null!;
+        private IScope _scope = null!;
 
         private void Awake()
         {
-            var builder = HostUtility.GetSceneScopeBuilder(_sceneId);
-            builder.AddComponents(_components);
-            _scope = HostUtility.BuildSceneScope(_sceneId);
+            _scope = HostUtility.CompleteSceneScopeBuilding(_sceneId, _components);
         }
 
         private async void OnDestroy()

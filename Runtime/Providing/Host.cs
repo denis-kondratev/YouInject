@@ -1,19 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace YouInject
 {
     internal class Host : IHost
     {
         private readonly BakedServiceCollection _services;
+        private readonly ISceneLoader _sceneLoader;
         private readonly HostOptions _options;
         private readonly Dictionary<string, SceneScopeBuilder> _sceneScopeBuilders;
         private readonly ServiceScope _rootScope;
 
-        public Host(BakedServiceCollection services, HostOptions options)
+        public Host(BakedServiceCollection services, ISceneLoader sceneLoader, HostOptions options)
         {
             _services = services;
+            _sceneLoader = sceneLoader;
             _options = options;
             _sceneScopeBuilders = new Dictionary<string, SceneScopeBuilder>();
             _rootScope = Scope.CreateRootScope(services, this);
@@ -26,33 +29,40 @@ namespace YouInject
             await _rootScope.DisposeAsync();
         }
 
-        public SceneScopeBuildingTask AddSceneScopeBuilder(string sceneId, IScope parentScope)
+        public SceneScopeBuilding StartBuildSceneScope(string sceneId, IScope parentScope)
         {
-            if (_sceneScopeBuilders.ContainsKey(sceneId))
+            if (_sceneScopeBuilders.TryGetValue(sceneId, out var builder))
             {
-                throw new Exception($"Trying to add {nameof(AddSceneScopeBuilder)} '{sceneId}', but it is already exists");
+                return new SceneScopeBuilding(builder);
             }
-            
-            var builder = new SceneScopeBuilder(sceneId, parentScope, _services);
+
+            if (_rootScope.TryGetSceneScope(sceneId, out var existingScope))
+            {
+                return new SceneScopeBuilding(existingScope);
+            }
+
+            if (!_sceneLoader.IsSceneLoaded(sceneId))
+            {
+                _sceneLoader.LoadSceneAsync(sceneId);
+            }
+
+            builder = new SceneScopeBuilder(sceneId, parentScope, _services);
             _sceneScopeBuilders.Add(sceneId, builder);
-            return new SceneScopeBuildingTask(builder);
+
+            return new SceneScopeBuilding(builder);
         }
         
-        public ISceneScopeBuilder GetSceneScopeBuilder(string sceneId)
+        public SceneScope CompleteSceneScopeBuilding(string sceneId, Component[] components)
         {
-            return GetSceneScopeBuilderPrivately(sceneId);
-        }
-
-        public SceneScope BuildSceneScope(string sceneId)
-        {
-            var scopeBuilder = GetSceneScopeBuilderPrivately(sceneId);
-            var scope = scopeBuilder.BuildScope();
+            var builder = GetSceneScopeBuilder(sceneId);
+            builder.AddComponents(components);
+            var scope = builder.BuildScope();
             _sceneScopeBuilders.Remove(sceneId);
             
             return scope;
         }
 
-        private SceneScopeBuilder GetSceneScopeBuilderPrivately(string sceneId)
+        private SceneScopeBuilder GetSceneScopeBuilder(string sceneId)
         {
             if (_sceneScopeBuilders.TryGetValue(sceneId, out var scope))
             {

@@ -5,6 +5,6 @@ namespace YouInject
     public interface IHost : IAsyncDisposable
     {
         IScope RootScope { get; }
-        SceneScopeBuildingTask AddSceneScopeBuilder(string sceneId, IScope parentScope);
+        SceneScopeBuilding StartBuildSceneScope(string sceneId, IScope parentScope);
     }
 }
