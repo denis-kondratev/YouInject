@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using UnityEngine;
 
 namespace YouInject
 {
-    internal class Host : IHost
+    internal class Host : IHost, ISceneScopeProvider
     {
         private readonly BakedServiceCollection _services;
         private readonly ISceneLoader _sceneLoader;
@@ -51,8 +53,8 @@ namespace YouInject
 
             return new SceneScopeBuilding(builder);
         }
-        
-        public SceneScope CompleteSceneScopeBuilding(string sceneId, Component[] components)
+
+        public IScope InitializeSceneScope(string sceneId, Component[] components)
         {
             var builder = GetSceneScopeBuilder(sceneId);
             builder.AddComponents(components);
@@ -60,6 +62,29 @@ namespace YouInject
             _sceneScopeBuilders.Remove(sceneId);
             
             return scope;
+        }
+        
+        public bool TryInitializeSceneScope(string sceneId, Component[] components, [MaybeNullWhen(false)] out IScope scope)
+        {
+            if (!_sceneScopeBuilders.TryGetValue(sceneId, out var builder))
+            {
+                scope = null;
+                return false;
+            }
+            
+            builder.AddComponents(components);
+            scope = builder.BuildScope();
+            _sceneScopeBuilders.Remove(sceneId);
+            
+            return true;
+        }
+
+        public IEnumerator WaitUntilScopeBuilderAdded(string sceneId)
+        {
+            while (!_sceneScopeBuilders.ContainsKey(sceneId))
+            {
+                yield return null;
+            }
         }
 
         private SceneScopeBuilder GetSceneScopeBuilder(string sceneId)

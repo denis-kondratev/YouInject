@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace YouInject
 {
@@ -38,6 +39,11 @@ namespace YouInject
             return new Awaiter(this);
         }
         
+        public async Task<IScope?>AsTask()
+        {
+            return await this;
+        }
+
         private void OnCompleted(SceneScope? scope)
         {
             if (_builder is null) throw new NullReferenceException();

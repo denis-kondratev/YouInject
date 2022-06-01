@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine;
 
 namespace YouInject
 {
@@ -13,15 +12,14 @@ namespace YouInject
             return builder;
         }
         
-        public static IScope CompleteSceneScopeBuilding(string sceneId, Component[] components)
+        public static ISceneScopeProvider GetSceneScopeProvider()
         {
             if (_host is null)
             {
-                throw new Exception($"Trying to build scene scope '{sceneId}', but the host doesn't exist.");
+                throw new Exception("The host doesn't exist.");
             }
             
-            var scope = _host.CompleteSceneScopeBuilding(sceneId, components);
-            return scope;
+            return _host;
         }
     }
 }
