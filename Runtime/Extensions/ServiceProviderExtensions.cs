@@ -10,5 +10,12 @@ namespace YouInject
             var instance = services.GetService(serviceType);
             return (T)instance;
         }
+        
+        public static IServiceScope CreateScope(this IServiceProvider services)
+        {
+            var scopeFactory = services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            return scope;
+        }
     }
 }

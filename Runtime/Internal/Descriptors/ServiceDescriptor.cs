@@ -5,11 +5,21 @@ namespace YouInject.Internal
 {
     internal class ServiceDescriptor : IServiceDescriptor
     {
-        public ServiceDescriptor(Type serviceType, Type instanceType, ServiceLifetime lifetime)
+        public ServiceDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
         {
-            ServiceType = serviceType ?? throw new ArgumentNullException(nameof(serviceType));
+            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
+            if (implementationType == null) throw new ArgumentNullException(nameof(implementationType));
+
+            if (!serviceType.IsAssignableFrom(implementationType))
+            {
+                throw new ArgumentException(
+                    $"Implementation type '{implementationType.Name}' is not assignable to '{serviceType.Name}'",
+                    nameof(implementationType));
+            }
+            
+            ServiceType = serviceType;
             Lifetime = lifetime;
-            InstanceFactory = GetFactory(instanceType);
+            InstanceFactory = GetFactory(implementationType);
         }
 
         public Type ServiceType { get; }

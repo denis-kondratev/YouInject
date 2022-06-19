@@ -35,37 +35,37 @@ namespace YouInject.Internal
             _disposables = null!;
         }
 
-        public virtual object GetService(IServiceDescriptor descriptor, ServiceScope.Context context)
+        public object GetService(IServiceDescriptor descriptor, ServiceScope.Context context)
         {
             if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
             if (context == null) throw new ArgumentNullException(nameof(context));
 
             ThrowIfDisposed();
             
-            var service = CreateService(descriptor, context);
+            var service = descriptor.InstanceFactory.Invoke(context);
             CaptureDisposable(service);
             return service;
         }
 
-        protected static object CreateService(IServiceDescriptor descriptor, ServiceScope.Context context)
+        public void AddService(IServiceDescriptor descriptor, object service)
         {
-            var service = descriptor.InstanceFactory.Invoke(context);
-            return service;
+            throw new InvalidOperationException("Transient service cannot be added.");
         }
-        
-        protected void CaptureDisposable(object service)
-        {
-            if (service == null) throw new ArgumentNullException(nameof(service));
-            
-            ThrowIfDisposed();
 
+        public virtual void RemoveService(IServiceDescriptor descriptor)
+        {
+            throw new InvalidOperationException("Transient service cannot be removed.");
+        }
+
+        private void CaptureDisposable(object service)
+        {
             if (service is IDisposable or IAsyncDisposable)
             {
                 _disposables.Add(service);
             }
         }
 
-        protected void ThrowIfDisposed()
+        private void ThrowIfDisposed()
         {
             if (_isDisposed) throw new InvalidOperationException("Container is already disposed.");
         }

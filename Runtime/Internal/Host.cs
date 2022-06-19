@@ -13,6 +13,7 @@ namespace YouInject.Internal
         {
             _singletons = new CacheableContainer();
             _serviceScope = new ServiceScope(_singletons, descriptors);
+            _serviceScope.AddService(typeof(IServiceScopeFactory), _serviceScope);
         }
 
         public IServiceProvider ServiceProvider => _serviceScope;

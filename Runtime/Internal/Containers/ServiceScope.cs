@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace YouInject.Internal
 {
-    internal partial class ServiceScope : IServiceProvider, IAsyncDisposable
+    internal partial class ServiceScope : IServiceScope, IServiceScopeFactory
     {
         private readonly IServiceContainer _singletonContainer;
         private readonly IServiceContainer _scopedContainer;
@@ -45,25 +45,46 @@ namespace YouInject.Internal
             _contextPool.Push(context);
             return service;
         }
-        
+
+        public IServiceScope CreateScope()
+        {
+            var scope = new ServiceScope(_singletonContainer, _descriptors);
+            return scope;
+        }
+
+        public void AddService(Type serviceType, object service)
+        {
+            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
+            if (service == null) throw new ArgumentNullException(nameof(service));
+
+            ThrowIfDisposed();
+            
+            if (!serviceType.IsInstanceOfType(service))
+            {
+                throw new ArgumentException(
+                    $"The service of type '{service.GetType().Name}' is not instance of type '{serviceType.Name}'.",
+                    nameof(service));
+            }
+            
+            var descriptor = GetDescriptor(serviceType);
+            var container = GetContainer(descriptor.Lifetime);
+            container.AddService(descriptor, service);
+        }
+
+        public void RemoveScope(Type serviceType)
+        {
+            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
+            var descriptor = GetDescriptor(serviceType);
+            var container = GetContainer(descriptor.Lifetime);
+            container.RemoveService(descriptor);
+        }
+
         private object GetService(Type serviceType, Context context)
         {
-            if (!_descriptors.TryGetValue(serviceType, out var descriptor))
-            {
-                throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
-            }
-
+            var descriptor = GetDescriptor(serviceType);
             var container = GetContainer(descriptor.Lifetime);
             var service = container.GetService(descriptor, context);
             return service;
-        }
-        
-        private void ThrowIfDisposed()
-        {
-            if (_isDisposed)
-            {
-                throw new InvalidOperationException("Containers is already disposed");
-            }
         }
 
         private IServiceContainer GetContainer(ServiceLifetime lifetime)
@@ -77,6 +98,24 @@ namespace YouInject.Internal
             };
 
             return container;
+        }
+
+        private IServiceDescriptor GetDescriptor(Type serviceType)
+        {
+            if (!_descriptors.TryGetValue(serviceType, out var descriptor))
+            {
+                throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
+            }
+
+            return descriptor;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_isDisposed)
+            {
+                throw new InvalidOperationException("Containers is already disposed");
+            }
         }
     }
 }

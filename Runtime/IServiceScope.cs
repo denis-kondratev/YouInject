@@ -2,9 +2,9 @@
 
 namespace YouInject
 {
-    public interface IServiceScope : IAsyncDisposable
+    public interface IServiceScope : IServiceProvider, IAsyncDisposable
     {
-        Action AddService(Type serviceType, object service);
+        void AddService(Type serviceType, object service);
         void RemoveScope(Type serviceType);
     }
 }
