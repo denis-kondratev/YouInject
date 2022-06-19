@@ -1,14 +1,11 @@
-﻿namespace YouInject
+﻿using System;
+
+namespace YouInject
 {
     public interface IServiceCollection
     {
-        IServiceDescriptorBuilder AddSingleton<TService, TDecision>();
-        IServiceDescriptorBuilder AddSingleton<TService>();
-        IServiceDescriptorBuilder AddScoped<TService, TDecision>();
-        IServiceDescriptorBuilder AddScoped<TService>();
-        IComponentDescriptorBuilder AddComponent<TService, TDecision>();
-        IComponentDescriptorBuilder AddComponent<TService>();
-        void AddFactory<TFactory, TDecision>();
-        bool Contains<TService>();
+        void AddFactory(Type factoryType, Type productType, ServiceLifetime lifetime);
+        void AddComponent(Type serviceType, Type instanceType, string initializingMethodName);
+        void AddService(Type serviceType, Type instanceType, ServiceLifetime lifetime);
     }
 }
