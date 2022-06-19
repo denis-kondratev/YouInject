@@ -35,7 +35,7 @@ namespace YouInject.Internal
             _disposables = null!;
         }
 
-        public object GetService(IServiceDescriptor descriptor, ServiceScope.Context context)
+        public object GetService(IServiceDescriptor descriptor, ScopeContext context)
         {
             if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
             if (context == null) throw new ArgumentNullException(nameof(context));

@@ -23,7 +23,7 @@
         {
             _services.AddSingleton<IYouInjectLogger, DefaultLogger>();
             _services.AddSingleton<Logger>();
-            _services.AddSingleton<IServiceScopeFactory, ServiceScope>();
+            _services.AddSingleton<IServiceScopeFactory, RootServiceScope>();
         }
     }
 }

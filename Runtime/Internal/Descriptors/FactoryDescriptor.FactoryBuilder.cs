@@ -8,38 +8,35 @@ namespace YouInject.Internal
     {
         private class FactoryBuilder
         {
-            private readonly Type _factoryType;
-            private readonly Type _productType;
+            private readonly FactoryDescriptor _descriptor;
             private readonly Type[] _steadyParameterTypes;
             private readonly int _totalParameterCount;
             private readonly MethodInfo _factoryMethodInfo;
             
-            public FactoryBuilder(Type factoryType, Type productType)
+            public FactoryBuilder(FactoryDescriptor descriptor)
             {
-                _factoryType = factoryType ?? throw new ArgumentNullException(nameof(factoryType));
-                _productType = productType ?? throw new ArgumentNullException(nameof(productType));
-                
-                var factoryDelegate = factoryType.GetMethod("Invoke")!;
+                _descriptor = descriptor ?? throw new ArgumentNullException(nameof(descriptor));
+                var factoryDelegate = descriptor.ServiceType.GetMethod("Invoke")!;
                 var delegateParameters = factoryDelegate.GetParameters();
 
-                _steadyParameterTypes = GetSteadyParameterTypes(delegateParameters, productType) 
-                                        ?? ThrowCannotFindSuitableConstructor(factoryType, productType);
+                _steadyParameterTypes = GetSteadyParameterTypes(delegateParameters, descriptor._productType) 
+                                        ?? ThrowCannotFindSuitableConstructor(descriptor.ServiceType, descriptor._productType);
                 _totalParameterCount = delegateParameters.Length + _steadyParameterTypes.Length;
                 var delegateParameterTypes = delegateParameters.Select(p => p.ParameterType).ToArray();
                 _factoryMethodInfo = GetFactoryMethodInfo(factoryDelegate.ReturnType, delegateParameterTypes);
             }
 
-            public object GetFactoryDelegate(ServiceScope.Context context)
+            public object GetFactoryDelegate(ScopeContext context)
             {
                 var factory = BuildFactory(context);
-                var factoryDelegate = Delegate.CreateDelegate(_factoryType, factory, _factoryMethodInfo, true);
+                var factoryDelegate = Delegate.CreateDelegate(_descriptor.ServiceType, factory, _factoryMethodInfo, true);
                 return factoryDelegate!;
             }
             
-            private GenericFactory BuildFactory(ServiceScope.Context context)
+            private GenericFactory BuildFactory(ScopeContext context)
             {
-                var steadyParameters = context.GetInitializingParameters(_factoryType, _steadyParameterTypes);
-                var factory = new GenericFactory(_productType, steadyParameters, _totalParameterCount);
+                var steadyParameters = context.GetServices(_steadyParameterTypes);
+                var factory = new GenericFactory(_descriptor._productType, steadyParameters, _totalParameterCount);
                 return factory;
             }
 

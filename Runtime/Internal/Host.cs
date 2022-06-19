@@ -6,21 +6,19 @@ namespace YouInject.Internal
 {
     internal class Host : IHost
     {
-        private readonly CacheableContainer _singletons;
-        private readonly ServiceScope _serviceScope;
+        private readonly RootServiceScope _serviceScope;
 
         public Host(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
         {
-            _singletons = new CacheableContainer();
-            _serviceScope = new ServiceScope(_singletons, descriptors);
+            _serviceScope = new RootServiceScope(descriptors);
             _serviceScope.AddService(typeof(IServiceScopeFactory), _serviceScope);
         }
 
         public IServiceProvider ServiceProvider => _serviceScope;
         
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
         {
-            await _singletons.DisposeAsync();
+            return _serviceScope.DisposeAsync();
         }
     }
 }

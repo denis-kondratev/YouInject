@@ -6,6 +6,6 @@ namespace YouInject.Internal
     {
         Type ServiceType { get; }
         ServiceLifetime Lifetime { get; }
-        Func<ServiceScope.Context, object> InstanceFactory { get; }
+        Func<ScopeContext, object> InstanceFactory { get; }
     }
 }

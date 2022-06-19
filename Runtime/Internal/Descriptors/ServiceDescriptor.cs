@@ -26,15 +26,15 @@ namespace YouInject.Internal
 
         public ServiceLifetime Lifetime { get; }
 
-        public Func<ServiceScope.Context, object> InstanceFactory { get; }
+        public Func<ScopeContext, object> InstanceFactory { get; }
 
-        private Func<ServiceScope.Context, object> GetFactory(Type instanceType)
+        private static Func<ScopeContext, object> GetFactory(Type instanceType)
         {
             var parameterTypes = GetParameterTypes(instanceType);
 
             return context =>
             {
-                var parameters = context.GetInitializingParameters(ServiceType, parameterTypes);
+                var parameters = context.GetServices(parameterTypes);
                 var instance = Activator.CreateInstance(instanceType, parameters);
                 return instance;
             };
