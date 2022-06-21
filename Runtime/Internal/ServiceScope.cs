@@ -34,5 +34,15 @@ namespace YouInject.Internal
 
             return _root.GetDescriptor(serviceType);
         }
+
+        public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
+        {
+            return _root.TryGetDescriptor(serviceType, out descriptor);
+        }
+
+        public override void AddDynamicDescriptor(DynamicDescriptor descriptor)
+        {
+            _root.AddDynamicDescriptor(descriptor);
+        }
     }
 }

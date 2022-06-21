@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace YouInject.Internal
 {
-    internal class ServiceDescriptor : IServiceDescriptor
+    internal class ServiceDescriptor : IConstructableDescriptor
     {
         public ServiceDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
         {
@@ -19,14 +19,14 @@ namespace YouInject.Internal
             
             ServiceType = serviceType;
             Lifetime = lifetime;
-            InstanceFactory = GetFactory(implementationType);
+            ServiceFactory = GetFactory(implementationType);
         }
 
         public Type ServiceType { get; }
 
         public ServiceLifetime Lifetime { get; }
 
-        public Func<ScopeContext, object> InstanceFactory { get; }
+        public Func<ScopeContext, object> ServiceFactory { get; }
 
         private static Func<ScopeContext, object> GetFactory(Type instanceType)
         {

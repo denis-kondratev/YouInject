@@ -5,9 +5,9 @@ namespace YouInject.Internal
 {
     internal class RootServiceScope : ServiceProvider, IServiceScopeFactory
     {
-        private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _descriptors;
+        private readonly Dictionary<Type, IServiceDescriptor> _descriptors;
         
-        public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
+        public RootServiceScope(Dictionary<Type, IServiceDescriptor> descriptors)
         {
             _descriptors = descriptors;
         }
@@ -22,7 +22,7 @@ namespace YouInject.Internal
         {
             ThrowIfDisposed();
             
-            var container = lifetime switch
+            IServiceContainer container = lifetime switch
             {
                 ServiceLifetime.Transient => TransientContainer,
                 ServiceLifetime.Scoped => ScopedContainer,
@@ -39,12 +39,22 @@ namespace YouInject.Internal
             
             ThrowIfDisposed();
             
-            if (!_descriptors.TryGetValue(serviceType, out var descriptor))
+            if (!TryGetDescriptor(serviceType, out var descriptor))
             {
                 throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
             }
 
             return descriptor;
+        }
+
+        public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
+        {
+            return _descriptors.TryGetValue(serviceType, out descriptor);
+        }
+
+        public override void AddDynamicDescriptor(DynamicDescriptor descriptor)
+        {
+            _descriptors.Add(descriptor.ServiceType, descriptor);
         }
     }
 }

@@ -19,9 +19,7 @@ namespace YouInject.Internal
         public Type ServiceType { get; }
 
         public ServiceLifetime Lifetime { get; }
-
-        public Func<ScopeContext, object> InstanceFactory => throw new InvalidOperationException($"Cannot instantiate a component. There is no way to do it.");
-
+        
         public Action<Component, ScopeContext> Initializer { get; }
         
         private static Action<Component, ScopeContext> GetInitializer(Type instanceType, string methodName)

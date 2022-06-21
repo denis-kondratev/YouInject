@@ -8,7 +8,7 @@ namespace YouInject.Internal
     {
         private readonly RootServiceScope _serviceScope;
 
-        public Host(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
+        public Host(Dictionary<Type, IServiceDescriptor> descriptors)
         {
             _serviceScope = new RootServiceScope(descriptors);
             _serviceScope.AddService(typeof(IServiceScopeFactory), _serviceScope);
