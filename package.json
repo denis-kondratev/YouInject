@@ -1,20 +1,20 @@
 {
   "name": "com.youinject.youinject",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "displayName": "You Inject",
-  "description": "Dependency Injection Library for Unity Game Engine",
+  "description": "You Inject is a short library that provides some mechanisms of the dependency injection design pattern.",
   "unity": "2021.3",
   "unityRelease": "0f1",
-  "documentationUrl": "https://github.com/Holygoe/YouInject/blob/main/README.md",
-  "changelogUrl": "",
+  "documentationUrl": "https://github.com/Holygoe/YouInject/wiki",
+  "changelogUrl": "https://github.com/Holygoe/YouInject/wiki",
   "licensesUrl": "https://github.com/Holygoe/YouInject/blob/main/LICENSE",
   "keywords": [
-    "Dependency Injection"
+    "dependency-injection",
+    "dependencies"
   ],
   "author": {
     "name": "You Inject",
-    "email": "kondratev.da@gmail.com",
+    "email": "holygoe@gmail.com",
     "url": "https://github.com/Holygoe"
-  },
-  "type": "library"
+  }
 }
