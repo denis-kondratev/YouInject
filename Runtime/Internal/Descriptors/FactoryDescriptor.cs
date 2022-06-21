@@ -2,7 +2,7 @@
 
 namespace YouInject.Internal
 {
-    internal partial class FactoryDescriptor : IServiceDescriptor
+    internal partial class FactoryDescriptor : IConstructableDescriptor
     {
         private readonly Type _productType;
 
@@ -16,14 +16,14 @@ namespace YouInject.Internal
             _productType = productType;
             ServiceType = factoryType;
             Lifetime = lifetime;
-            InstanceFactory = GetInstanceFactory();
+            ServiceFactory = GetInstanceFactory();
         }
 
         public Type ServiceType { get; }
         
         public ServiceLifetime Lifetime { get; }
         
-        public Func<ScopeContext, object> InstanceFactory { get; }
+        public Func<ScopeContext, object> ServiceFactory { get; }
         
         private Func<ScopeContext, object> GetInstanceFactory()
         {

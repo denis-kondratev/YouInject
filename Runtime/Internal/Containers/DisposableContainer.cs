@@ -4,21 +4,20 @@ using System.Threading.Tasks;
 
 namespace YouInject.Internal
 {
-    internal class DisposableContainer : IServiceContainer
+    internal class DisposableContainer : ServiceContainer
     {
         private List<object> _disposables;
-        private bool _isDisposed;
         
         public DisposableContainer()
         {
             _disposables = new List<object>();
         }
         
-        public async ValueTask DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
-            if (_isDisposed) return;
+            if (IsDisposed) return;
 
-            _isDisposed = true;
+            IsDisposed = true;
 
             foreach (var disposable in _disposables)
             {
@@ -35,14 +34,14 @@ namespace YouInject.Internal
             _disposables = null!;
         }
 
-        public object GetService(IServiceDescriptor descriptor, ScopeContext context)
+        public override object GetService(IServiceDescriptor descriptor, ScopeContext context)
         {
             if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
             if (context == null) throw new ArgumentNullException(nameof(context));
 
             ThrowIfDisposed();
             
-            var service = descriptor.InstanceFactory.Invoke(context);
+            var service = CreateService(descriptor, context);
             CaptureDisposable(service);
             return service;
         }
@@ -63,11 +62,6 @@ namespace YouInject.Internal
             {
                 _disposables.Add(service);
             }
-        }
-
-        private void ThrowIfDisposed()
-        {
-            if (_isDisposed) throw new InvalidOperationException("Container is already disposed.");
         }
     }
 }

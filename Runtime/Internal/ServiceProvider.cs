@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace YouInject.Internal
 {
     internal abstract class ServiceProvider : IServiceScope, IContextualServiceScope
     {
-        protected readonly IServiceContainer ScopedContainer;
-        protected readonly IServiceContainer TransientContainer;
+        protected readonly CachingContainer ScopedContainer;
+        protected readonly DisposableContainer TransientContainer;
         
         private readonly Stack<ScopeContext> _contextPool;
         private bool _isDisposed;
 
         protected ServiceProvider()
         {
-            ScopedContainer = new CacheableContainer();
+            ScopedContainer = new CachingContainer();
             TransientContainer = new DisposableContainer();
             _contextPool = new Stack<ScopeContext>();
         }
@@ -58,23 +59,38 @@ namespace YouInject.Internal
                     $"The service of type '{service.GetType().Name}' is not instance of type '{serviceType.Name}'.",
                     nameof(service));
             }
+
+            if (!TryGetDescriptor(serviceType, out var descriptor))
+            {
+                descriptor = new DynamicDescriptor(serviceType);
+                AddDynamicDescriptor((DynamicDescriptor)descriptor);
+            }
             
-            var descriptor = GetDescriptor(serviceType);
-            var container = GetContainer(descriptor.Lifetime);
-            container.AddService(descriptor, service);
+            ScopedContainer.AddService(serviceType, service);
         }
 
-        public void RemoveScope(Type serviceType)
+        public void RemoveService(Type serviceType)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
+            
             var descriptor = GetDescriptor(serviceType);
-            var container = GetContainer(descriptor.Lifetime);
-            container.RemoveService(descriptor);
+
+            if (descriptor is not DynamicDescriptor)
+            {
+                throw new InvalidOperationException($"Cannot delete '{serviceType.Name}' service. " +
+                                                    "Only dynamic services can be deleted.");
+            }
+            
+            ScopedContainer.RemoveService(descriptor);
         }
         
         public abstract IServiceContainer GetContainer(ServiceLifetime lifetime);
 
         public abstract IServiceDescriptor GetDescriptor(Type serviceType);
+
+        public abstract bool TryGetDescriptor(Type serviceType, [MaybeNullWhen(false)] out IServiceDescriptor descriptor);
+
+        public abstract void AddDynamicDescriptor(DynamicDescriptor descriptor);
 
         protected void ThrowIfDisposed()
         {

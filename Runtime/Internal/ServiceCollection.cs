@@ -34,7 +34,7 @@ namespace YouInject.Internal
             _descriptors.Add(serviceType, descriptor);
         }
         
-        public IReadOnlyDictionary<Type, IServiceDescriptor> Bake()
+        public Dictionary<Type, IServiceDescriptor> Bake()
         {
             if (_isBaked)
             {
