@@ -33,10 +33,10 @@ namespace YouInject.Internal
             }
         }
 
-        public override object GetService(IServiceDescriptor descriptor, ScopeContext context)
+        public override object GetService(IServiceDescriptor descriptor, ContextualServiceProvider serviceProvider)
         {
             if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
-            if (context == null) throw new ArgumentNullException(nameof(context));
+            if (serviceProvider == null) throw new ArgumentNullException(nameof(serviceProvider));
             
             ThrowIfDisposed();
             
@@ -44,8 +44,8 @@ namespace YouInject.Internal
             {
                 return service;
             }
-
-            service = CreateService(descriptor, context);
+            
+            service = CreateService(descriptor, serviceProvider);
             _services.Add(descriptor.ServiceType, service);
             return service;
         }

@@ -23,9 +23,9 @@ namespace YouInject.Internal
         
         public ServiceLifetime Lifetime { get; }
         
-        public Func<ScopeContext, object> ServiceFactory { get; }
+        public Func<ContextualServiceProvider, object> ServiceFactory { get; }
         
-        private Func<ScopeContext, object> GetInstanceFactory()
+        private Func<ContextualServiceProvider, object> GetInstanceFactory()
         {
             var factoryBuilder = new FactoryBuilder(this);
             

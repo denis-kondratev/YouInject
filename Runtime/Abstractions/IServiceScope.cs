@@ -6,5 +6,6 @@ namespace YouInject
     {
         void AddService(Type serviceType, object service);
         void RemoveService(Type serviceType);
+        void InitializeComponent(Delegate initializeDelegate);
     }
 }

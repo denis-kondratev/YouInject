@@ -34,28 +34,18 @@ namespace YouInject.Internal
             _disposables = null!;
         }
 
-        public override object GetService(IServiceDescriptor descriptor, ScopeContext context)
+        public override object GetService(IServiceDescriptor descriptor, ContextualServiceProvider serviceProvider)
         {
             if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
-            if (context == null) throw new ArgumentNullException(nameof(context));
+            if (serviceProvider == null) throw new ArgumentNullException(nameof(serviceProvider));
 
             ThrowIfDisposed();
             
-            var service = CreateService(descriptor, context);
+            var service = CreateService(descriptor, serviceProvider);
             CaptureDisposable(service);
             return service;
         }
-
-        public void AddService(IServiceDescriptor descriptor, object service)
-        {
-            throw new InvalidOperationException("Transient service cannot be added.");
-        }
-
-        public virtual void RemoveService(IServiceDescriptor descriptor)
-        {
-            throw new InvalidOperationException("Transient service cannot be removed.");
-        }
-
+        
         private void CaptureDisposable(object service)
         {
             if (service is IDisposable or IAsyncDisposable)

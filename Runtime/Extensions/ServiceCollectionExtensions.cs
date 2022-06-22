@@ -39,6 +39,16 @@
             services.AddFactory(factoryType, productType, ServiceLifetime.Scoped);
         }
 
+        public static void AddDynamicScoped<TService>(this IServiceCollection services)
+        {
+            services.AddDynamicService<TService>(ServiceLifetime.Scoped);
+        }
+        
+        public static void AddDynamicSingleton<TService>(this IServiceCollection services)
+        {
+            services.AddDynamicService<TService>(ServiceLifetime.Singleton);
+        }
+        
         private static void AddService<TService, TInstance>(this IServiceCollection services, ServiceLifetime lifetime)
         {
             var serviceType = typeof(TService);
@@ -50,6 +60,12 @@
         {
             var serviceType = typeof(TService);
             services.AddService(serviceType, serviceType, lifetime);
+        }
+
+        private static void AddDynamicService<TService>(this IServiceCollection services, ServiceLifetime lifetime)
+        {
+            var serviceType = typeof(TService);
+            services.AddDynamicService(serviceType, lifetime);
         }
     }
 }
