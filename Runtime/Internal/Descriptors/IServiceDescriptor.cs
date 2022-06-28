@@ -7,15 +7,4 @@ namespace YouInject.Internal
         Type ServiceType { get; }
         ServiceLifetime Lifetime { get; }
     }
-
-    public class DynamicDescriptor : IServiceDescriptor
-    {
-        public DynamicDescriptor(Type serviceType)
-        {
-            ServiceType = serviceType;
-        }
-        
-        public Type ServiceType { get; }
-        public ServiceLifetime Lifetime => ServiceLifetime.Scoped;
-    }
 }

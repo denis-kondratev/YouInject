@@ -7,8 +7,6 @@ namespace YouInject.Internal
 {
     internal class ComponentDescriptor : IServiceDescriptor
     {
-        private static readonly Type ComponentType = typeof(Component);
-
         public ComponentDescriptor(Type serviceType, Type instanceType, string initializingMethodName)
         {
             ServiceType = serviceType ?? throw new ArgumentNullException(nameof(serviceType));
@@ -20,11 +18,10 @@ namespace YouInject.Internal
 
         public ServiceLifetime Lifetime { get; }
         
-        public Action<Component, ScopeContext> Initializer { get; }
+        public Action<Component, ContextualServiceProvider> Initializer { get; }
         
-        private static Action<Component, ScopeContext> GetInitializer(Type instanceType, string methodName)
+        private static Action<Component, ContextualServiceProvider> GetInitializer(Type instanceType, string methodName)
         {
-            if (methodName == null) throw new ArgumentNullException(nameof(methodName));
             var methodInfo = GetInitializingMethod(instanceType, methodName);
             var parameterTypes = methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
 

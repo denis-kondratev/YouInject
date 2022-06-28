@@ -2,11 +2,11 @@
 
 namespace YouInject.Internal
 {
-    internal class ServiceScope : ServiceProvider
+    internal class InheritedServiceScope : ServiceScope
     {
         private readonly RootServiceScope _root;
 
-        public ServiceScope(RootServiceScope root)
+        public InheritedServiceScope(RootServiceScope root)
         {
             _root = root;
         }
@@ -38,11 +38,6 @@ namespace YouInject.Internal
         public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
         {
             return _root.TryGetDescriptor(serviceType, out descriptor);
-        }
-
-        public override void AddDynamicDescriptor(DynamicDescriptor descriptor)
-        {
-            _root.AddDynamicDescriptor(descriptor);
         }
     }
 }

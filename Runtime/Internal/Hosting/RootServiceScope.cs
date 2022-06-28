@@ -3,18 +3,18 @@ using System.Collections.Generic;
 
 namespace YouInject.Internal
 {
-    internal class RootServiceScope : ServiceProvider, IServiceScopeFactory
+    internal class RootServiceScope : ServiceScope, IServiceScopeFactory
     {
-        private readonly Dictionary<Type, IServiceDescriptor> _descriptors;
+        private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _descriptors;
         
-        public RootServiceScope(Dictionary<Type, IServiceDescriptor> descriptors)
+        public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
         {
             _descriptors = descriptors;
         }
 
         public IServiceScope CreateScope()
         {
-            var scope = new ServiceScope(this);
+            var scope = new InheritedServiceScope(this);
             return scope;
         }
         
@@ -50,11 +50,6 @@ namespace YouInject.Internal
         public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
         {
             return _descriptors.TryGetValue(serviceType, out descriptor);
-        }
-
-        public override void AddDynamicDescriptor(DynamicDescriptor descriptor)
-        {
-            _descriptors.Add(descriptor.ServiceType, descriptor);
         }
     }
 }

@@ -26,14 +26,14 @@ namespace YouInject.Internal
                 _factoryMethodInfo = GetFactoryMethodInfo(factoryDelegate.ReturnType, delegateParameterTypes);
             }
 
-            public object GetFactoryDelegate(ScopeContext context)
+            public object GetFactoryDelegate(ContextualServiceProvider context)
             {
                 var factory = BuildFactory(context);
                 var factoryDelegate = Delegate.CreateDelegate(_descriptor.ServiceType, factory, _factoryMethodInfo, true);
                 return factoryDelegate!;
             }
             
-            private GenericFactory BuildFactory(ScopeContext context)
+            private GenericFactory BuildFactory(ContextualServiceProvider context)
             {
                 var steadyParameters = context.GetServices(_steadyParameterTypes);
                 var factory = new GenericFactory(_descriptor._productType, steadyParameters, _totalParameterCount);

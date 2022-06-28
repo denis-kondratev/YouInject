@@ -1,23 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace YouInject.Internal
 {
-    internal abstract class ServiceProvider : IServiceScope, IContextualServiceScope
+    internal abstract partial class ServiceScope : IServiceScope, IContextualScope
     {
         protected readonly CachingContainer ScopedContainer;
         protected readonly DisposableContainer TransientContainer;
-        
-        private readonly Stack<ScopeContext> _contextPool;
+        private readonly Stack<ContextualServiceProvider> _contextPool;
         private bool _isDisposed;
 
-        protected ServiceProvider()
+        protected ServiceScope()
         {
             ScopedContainer = new CachingContainer();
             TransientContainer = new DisposableContainer();
-            _contextPool = new Stack<ScopeContext>();
+            _contextPool = new Stack<ContextualServiceProvider>();
         }
         
         public async ValueTask DisposeAsync()
@@ -35,14 +35,8 @@ namespace YouInject.Internal
             
             ThrowIfDisposed();
             
-            if (!_contextPool.TryPop(out var context))
-            {
-                context = new ScopeContext(this);
-            }
-
-            var service = context.GetService(serviceType);
-            context.Release();
-            _contextPool.Push(context);
+            using var context = new Context(this);
+            var service = context.ServiceProvider.GetService(serviceType);
             return service;
         }
 
@@ -59,14 +53,19 @@ namespace YouInject.Internal
                     $"The service of type '{service.GetType().Name}' is not instance of type '{serviceType.Name}'.",
                     nameof(service));
             }
-
+            
             if (!TryGetDescriptor(serviceType, out var descriptor))
             {
-                descriptor = new DynamicDescriptor(serviceType);
-                AddDynamicDescriptor((DynamicDescriptor)descriptor);
+                throw new InvalidOperationException($"The '{serviceType.Name}' service is not registered");
             }
-            
-            ScopedContainer.AddService(serviceType, service);
+
+            if (descriptor is not DynamicDescriptor)
+            {
+                throw new InvalidOperationException($"The '{serviceType.Name}' service is not registered as dynamic one.");
+            }
+
+            var container = GetContainer(descriptor.Lifetime) as CachingContainer; 
+            container!.AddService(serviceType, service);
         }
 
         public void RemoveService(Type serviceType)
@@ -81,16 +80,27 @@ namespace YouInject.Internal
                                                     "Only dynamic services can be deleted.");
             }
             
-            ScopedContainer.RemoveService(descriptor);
+            var container = GetContainer(descriptor.Lifetime) as CachingContainer;
+            container!.RemoveService(descriptor);
         }
-        
+
+        public void InitializeComponent(Delegate initializeDelegate)
+        {
+            if (initializeDelegate == null) throw new ArgumentNullException(nameof(initializeDelegate));
+
+            ThrowIfDisposed();
+
+            using var context = new Context(this);
+            var parameterTypes = initializeDelegate.Method.GetParameters().Select(p => p.ParameterType).ToArray();
+            var parameters = context.ServiceProvider.GetServices(parameterTypes);
+            initializeDelegate.DynamicInvoke(parameters);
+        }
+
         public abstract IServiceContainer GetContainer(ServiceLifetime lifetime);
 
         public abstract IServiceDescriptor GetDescriptor(Type serviceType);
 
         public abstract bool TryGetDescriptor(Type serviceType, [MaybeNullWhen(false)] out IServiceDescriptor descriptor);
-
-        public abstract void AddDynamicDescriptor(DynamicDescriptor descriptor);
 
         protected void ThrowIfDisposed()
         {
