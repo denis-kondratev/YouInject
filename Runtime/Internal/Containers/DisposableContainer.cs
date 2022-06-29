@@ -4,21 +4,20 @@ using System.Threading.Tasks;
 
 namespace YouInject.Internal
 {
-    internal class DisposableContainer : IServiceContainer
+    internal class DisposableContainer : ServiceContainer
     {
         private List<object> _disposables;
-        private bool _isDisposed;
         
         public DisposableContainer()
         {
             _disposables = new List<object>();
         }
         
-        public async ValueTask DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
-            if (_isDisposed) return;
+            if (IsDisposed) return;
 
-            _isDisposed = true;
+            IsDisposed = true;
 
             foreach (var disposable in _disposables)
             {
@@ -35,39 +34,24 @@ namespace YouInject.Internal
             _disposables = null!;
         }
 
-        public object GetService(IServiceDescriptor descriptor, ScopeContext context)
+        public override object GetService(IServiceDescriptor descriptor, ContextualServiceProvider serviceProvider)
         {
             if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
-            if (context == null) throw new ArgumentNullException(nameof(context));
+            if (serviceProvider == null) throw new ArgumentNullException(nameof(serviceProvider));
 
             ThrowIfDisposed();
             
-            var service = descriptor.InstanceFactory.Invoke(context);
+            var service = CreateService(descriptor, serviceProvider);
             CaptureDisposable(service);
             return service;
         }
-
-        public void AddService(IServiceDescriptor descriptor, object service)
-        {
-            throw new InvalidOperationException("Transient service cannot be added.");
-        }
-
-        public virtual void RemoveService(IServiceDescriptor descriptor)
-        {
-            throw new InvalidOperationException("Transient service cannot be removed.");
-        }
-
+        
         private void CaptureDisposable(object service)
         {
             if (service is IDisposable or IAsyncDisposable)
             {
                 _disposables.Add(service);
             }
-        }
-
-        private void ThrowIfDisposed()
-        {
-            if (_isDisposed) throw new InvalidOperationException("Container is already disposed.");
         }
     }
 }

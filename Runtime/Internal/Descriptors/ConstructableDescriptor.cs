@@ -3,9 +3,9 @@ using System.Linq;
 
 namespace YouInject.Internal
 {
-    internal class ServiceDescriptor : IServiceDescriptor
+    internal class ConstructableDescriptor : IConstructableDescriptor
     {
-        public ServiceDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
+        public ConstructableDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             if (implementationType == null) throw new ArgumentNullException(nameof(implementationType));
@@ -16,19 +16,26 @@ namespace YouInject.Internal
                     $"Implementation type '{implementationType.Name}' is not assignable to '{serviceType.Name}'",
                     nameof(implementationType));
             }
+
+            if (DescriptorUtility.IsComponent(serviceType))
+            {
+                throw new ArgumentException(
+                    $"The '{serviceType.Name}' service is derived from 'UnityEngine.Component' type.",
+                    nameof(serviceType));
+            }
             
             ServiceType = serviceType;
             Lifetime = lifetime;
-            InstanceFactory = GetFactory(implementationType);
+            ServiceFactory = GetFactory(implementationType);
         }
 
         public Type ServiceType { get; }
 
         public ServiceLifetime Lifetime { get; }
 
-        public Func<ScopeContext, object> InstanceFactory { get; }
+        public Func<ContextualServiceProvider, object> ServiceFactory { get; }
 
-        private static Func<ScopeContext, object> GetFactory(Type instanceType)
+        private static Func<ContextualServiceProvider, object> GetFactory(Type instanceType)
         {
             var parameterTypes = GetParameterTypes(instanceType);
 

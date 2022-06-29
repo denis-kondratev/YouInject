@@ -4,21 +4,20 @@ using System.Threading.Tasks;
 
 namespace YouInject.Internal
 {
-    internal class CacheableContainer : IServiceContainer
+    internal class CachingContainer : ServiceContainer
     {
         private readonly Dictionary<Type, object> _services;
-        private bool _isDisposed;
 
-        public CacheableContainer()
+        public CachingContainer()
         {
             _services = new Dictionary<Type, object>();
         }
 
-        public async ValueTask DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
-            if (_isDisposed) return;
+            if (IsDisposed) return;
 
-            _isDisposed = true;
+            IsDisposed = true;
             
             foreach (var service in _services.Values)
             {
@@ -34,10 +33,10 @@ namespace YouInject.Internal
             }
         }
 
-        public object GetService(IServiceDescriptor descriptor, ScopeContext context)
+        public override object GetService(IServiceDescriptor descriptor, ContextualServiceProvider serviceProvider)
         {
             if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
-            if (context == null) throw new ArgumentNullException(nameof(context));
+            if (serviceProvider == null) throw new ArgumentNullException(nameof(serviceProvider));
             
             ThrowIfDisposed();
             
@@ -45,20 +44,20 @@ namespace YouInject.Internal
             {
                 return service;
             }
-
-            service = descriptor.InstanceFactory.Invoke(context);
+            
+            service = CreateService(descriptor, serviceProvider);
             _services.Add(descriptor.ServiceType, service);
             return service;
         }
 
-        public void AddService(IServiceDescriptor descriptor, object service)
+        public void AddService(Type serviceType, object service)
         {
-            if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
+            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             if (service == null) throw new ArgumentNullException(nameof(service));
             
             ThrowIfDisposed();
             
-            _services.Add(descriptor.ServiceType, service);
+            _services.Add(serviceType, service);
         }
 
         public void RemoveService(IServiceDescriptor descriptor)
@@ -68,11 +67,6 @@ namespace YouInject.Internal
             ThrowIfDisposed();
             
             _services.Remove(descriptor.ServiceType);
-        }
-
-        private void ThrowIfDisposed()
-        {
-            if (_isDisposed) throw new InvalidOperationException("Container is already disposed.");
         }
     }
 }

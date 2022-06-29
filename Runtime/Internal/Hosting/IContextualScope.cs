@@ -2,7 +2,7 @@
 
 namespace YouInject.Internal
 {
-    internal interface IContextualServiceScope
+    internal interface IContextualScope
     {
         IServiceContainer GetContainer(ServiceLifetime lifetime);
         IServiceDescriptor GetDescriptor(Type serviceType);

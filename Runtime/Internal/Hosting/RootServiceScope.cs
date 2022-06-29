@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace YouInject.Internal
 {
-    internal class RootServiceScope : ServiceProvider, IServiceScopeFactory
+    internal class RootServiceScope : ServiceScope, IServiceScopeFactory
     {
         private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _descriptors;
         
@@ -14,7 +14,7 @@ namespace YouInject.Internal
 
         public IServiceScope CreateScope()
         {
-            var scope = new ServiceScope(this);
+            var scope = new InheritedServiceScope(this);
             return scope;
         }
         
@@ -22,7 +22,7 @@ namespace YouInject.Internal
         {
             ThrowIfDisposed();
             
-            var container = lifetime switch
+            IServiceContainer container = lifetime switch
             {
                 ServiceLifetime.Transient => TransientContainer,
                 ServiceLifetime.Scoped => ScopedContainer,
@@ -39,12 +39,17 @@ namespace YouInject.Internal
             
             ThrowIfDisposed();
             
-            if (!_descriptors.TryGetValue(serviceType, out var descriptor))
+            if (!TryGetDescriptor(serviceType, out var descriptor))
             {
                 throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
             }
 
             return descriptor;
+        }
+
+        public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
+        {
+            return _descriptors.TryGetValue(serviceType, out descriptor);
         }
     }
 }

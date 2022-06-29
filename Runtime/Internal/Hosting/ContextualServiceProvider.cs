@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace YouInject.Internal
 {
-    internal class ScopeContext
+    internal class ContextualServiceProvider
     {
-        private readonly IContextualServiceScope _scope;
+        private readonly IContextualScope _scope;
         private readonly Stack<Type> _requests;
         private int _singletonPosition;
 
-        public ScopeContext(IContextualServiceScope scope)
+        public ContextualServiceProvider(IContextualScope scope)
         {
             _scope = scope;
             _requests = new Stack<Type>();
@@ -27,9 +27,10 @@ namespace YouInject.Internal
             var container = _scope.GetContainer(lifetime);
             var service = container.GetService(descriptor, this);
             PopService();
+
             return service;
         }
-        
+
         public object[] GetServices(Type[] parameterTypes)
         {
             if (parameterTypes == null) throw new ArgumentNullException(nameof(parameterTypes));
@@ -39,18 +40,19 @@ namespace YouInject.Internal
                 return Array.Empty<object>();
             }
             
-            var decisions = new object[parameterTypes.Length];
+            var services = new object[parameterTypes.Length];
 
-            for (var i = 0; i < decisions.Length; i++)
+            for (var i = 0; i < services.Length; i++)
             {
-                decisions[i] = GetService(parameterTypes[i]);
+                services[i] = GetService(parameterTypes[i]);
             }
             
-            return decisions;
+            return services;
         }
 
         public void Release()
         {
+            _singletonPosition = 0;
             _requests.Clear();
         }
 
@@ -60,7 +62,8 @@ namespace YouInject.Internal
             if (_requests.Contains(serviceType))
             {
                 var anotherType = _requests.Peek();
-                throw new InvalidOperationException($"'{serviceType.Name}' and '{anotherType.Name}' services refer on each other.");
+                throw new InvalidOperationException(
+                    $"'{serviceType.Name}' and '{anotherType.Name}' services refer on each other.");
             }
             
             _requests.Push(serviceType);
@@ -75,7 +78,7 @@ namespace YouInject.Internal
         {
             _requests.Pop();
 
-            if (IsSingleton && _singletonPosition < _requests.Count)
+            if (IsSingleton && _singletonPosition > _requests.Count)
             {
                 _singletonPosition = 0;
             }
