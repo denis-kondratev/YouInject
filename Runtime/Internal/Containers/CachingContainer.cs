@@ -45,7 +45,7 @@ namespace YouInject.Internal
                 return service;
             }
             
-            service = CreateService(descriptor, serviceProvider);
+            service = descriptor.ResolveService(serviceProvider);
             _services.Add(descriptor.ServiceType, service);
             return service;
         }
@@ -60,13 +60,18 @@ namespace YouInject.Internal
             _services.Add(serviceType, service);
         }
 
-        public void RemoveService(IServiceDescriptor descriptor)
+        public void RemoveService(Type serviceType)
         {
-            if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
-            
+            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
+
             ThrowIfDisposed();
             
-            _services.Remove(descriptor.ServiceType);
+            _services.Remove(serviceType);
+        }
+
+        public bool Contains(Type serviceType)
+        {
+            return _services.ContainsKey(serviceType);
         }
     }
 }

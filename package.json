@@ -1,6 +1,6 @@
 {
   "name": "com.youinject.youinject",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "displayName": "You Inject",
   "description": "You Inject is a short library that provides some mechanisms of the dependency injection design pattern.",
   "unity": "2021.3",
@@ -16,5 +16,6 @@
     "name": "You Inject",
     "email": "holygoe@gmail.com",
     "url": "https://github.com/Holygoe"
-  }
+  },
+  "category": "Libraries"
 }

@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace YouInject.Internal
 {
     internal class ContextualServiceProvider
     {
         private readonly IContextualScope _scope;
-        private readonly Stack<Type> _requests;
+        private readonly Stack<IServiceDescriptor> _requestStack;
         private int _singletonPosition;
 
         public ContextualServiceProvider(IContextualScope scope)
         {
             _scope = scope;
-            _requests = new Stack<Type>();
+            _requestStack = new Stack<IServiceDescriptor>();
         }
 
         private bool IsSingleton => _singletonPosition > 0;
@@ -23,28 +24,41 @@ namespace YouInject.Internal
 
             var descriptor = _scope.GetDescriptor(serviceType);
             PushService(descriptor);
+            
             var lifetime = IsSingleton ? ServiceLifetime.Singleton : descriptor.Lifetime;
             var container = _scope.GetContainer(lifetime);
             var service = container.GetService(descriptor, this);
+            
             PopService();
-
             return service;
         }
 
-        public object[] GetServices(Type[] parameterTypes)
+        public object[] GetServices(Type[] types)
         {
-            if (parameterTypes == null) throw new ArgumentNullException(nameof(parameterTypes));
-            
-            if (parameterTypes.Length == 0)
+            if (types == null) throw new ArgumentNullException(nameof(types));
+
+            return GetServices(types, t => t);
+        }
+        
+        public object[] GetServices(ParameterInfo[] types)
+        {
+            if (types == null) throw new ArgumentNullException(nameof(types));
+
+            return GetServices(types, p => p.ParameterType);
+        }
+        
+        private object[] GetServices<T>(T[] types, Func<T, Type> getType)
+        {
+            if (types.Length == 0)
             {
                 return Array.Empty<object>();
             }
             
-            var services = new object[parameterTypes.Length];
+            var services = new object[types.Length];
 
             for (var i = 0; i < services.Length; i++)
             {
-                services[i] = GetService(parameterTypes[i]);
+                services[i] = GetService(getType(types[i]));
             }
             
             return services;
@@ -53,32 +67,32 @@ namespace YouInject.Internal
         public void Release()
         {
             _singletonPosition = 0;
-            _requests.Clear();
+            _requestStack.Clear();
         }
 
         private void PushService(IServiceDescriptor descriptor)
         {
             var serviceType = descriptor.ServiceType;
-            if (_requests.Contains(serviceType))
+            
+            if (_requestStack.Contains(descriptor))
             {
-                var anotherType = _requests.Peek();
-                throw new InvalidOperationException(
-                    $"'{serviceType.Name}' and '{anotherType.Name}' services refer on each other.");
+                var anotherType = _requestStack.Peek().ServiceType;
+                throw new InvalidOperationException($"'{serviceType.Name}' and '{anotherType.Name}' services refer on each other.");
             }
             
-            _requests.Push(serviceType);
+            _requestStack.Push(descriptor);
             
             if (!IsSingleton && descriptor.Lifetime is ServiceLifetime.Singleton)
             {
-                _singletonPosition = _requests.Count;
+                _singletonPosition = _requestStack.Count;
             }
         }
 
         private void PopService()
         {
-            _requests.Pop();
+            _requestStack.Pop();
 
-            if (IsSingleton && _singletonPosition > _requests.Count)
+            if (IsSingleton && _singletonPosition > _requestStack.Count)
             {
                 _singletonPosition = 0;
             }

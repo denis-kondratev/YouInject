@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace YouInject.Internal
@@ -13,6 +13,8 @@ namespace YouInject.Internal
         private readonly Stack<ContextualServiceProvider> _contextPool;
         private bool _isDisposed;
 
+        protected abstract ServiceLifetime DynamicLifetime { get; }
+        
         protected ServiceScope()
         {
             ScopedContainer = new CachingContainer();
@@ -59,17 +61,32 @@ namespace YouInject.Internal
                 throw new InvalidOperationException($"The '{serviceType.Name}' service is not registered");
             }
 
-            if (descriptor is not DynamicDescriptor)
+            if (descriptor is not IDynamicDescriptor dynamicDescriptor)
             {
                 throw new InvalidOperationException($"The '{serviceType.Name}' service is not registered as dynamic one.");
             }
 
-            var container = GetContainer(descriptor.Lifetime) as CachingContainer; 
+            var lifetime = dynamicDescriptor.Lifetime;
+            var container = GetContainer(lifetime) as CachingContainer;
+
+            if (container!.Contains(serviceType))
+            {
+                throw new InvalidOperationException($"The '{serviceType.Name}' service already exists.");
+            }
+
+            if (lifetime != DynamicLifetime)
+            {
+                dynamicDescriptor.SetLifetime(DynamicLifetime);
+                container = GetContainer(dynamicDescriptor.Lifetime) as CachingContainer;
+            }
+            
             container!.AddService(serviceType, service);
         }
 
         public void RemoveService(Type serviceType)
         {
+            if (_isDisposed) return;
+
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             
             var descriptor = GetDescriptor(serviceType);
@@ -81,19 +98,32 @@ namespace YouInject.Internal
             }
             
             var container = GetContainer(descriptor.Lifetime) as CachingContainer;
-            container!.RemoveService(descriptor);
+            container!.RemoveService(descriptor.ServiceType);
         }
 
-        public void InitializeComponent(Delegate initializeDelegate)
+        public void InitializeService(Delegate initializeDelegate)
         {
             if (initializeDelegate == null) throw new ArgumentNullException(nameof(initializeDelegate));
 
             ThrowIfDisposed();
 
             using var context = new Context(this);
-            var parameterTypes = initializeDelegate.Method.GetParameters().Select(p => p.ParameterType).ToArray();
+            var parameterTypes = initializeDelegate.Method.GetParameters();
             var parameters = context.ServiceProvider.GetServices(parameterTypes);
             initializeDelegate.DynamicInvoke(parameters);
+        }
+
+        public void InitializeService(object service, MethodInfo methodInfo)
+        {
+            if (service == null) throw new ArgumentNullException(nameof(service));
+            if (methodInfo == null) throw new ArgumentNullException(nameof(methodInfo));
+            
+            ThrowIfDisposed();
+
+            using var context = new Context(this);
+            var parameterTypes = methodInfo.GetParameters();
+            var parameters = context.ServiceProvider.GetServices(parameterTypes);
+            methodInfo.Invoke(service, parameters);
         }
 
         public abstract IServiceContainer GetContainer(ServiceLifetime lifetime);
@@ -101,7 +131,7 @@ namespace YouInject.Internal
         public abstract IServiceDescriptor GetDescriptor(Type serviceType);
 
         public abstract bool TryGetDescriptor(Type serviceType, [MaybeNullWhen(false)] out IServiceDescriptor descriptor);
-
+        
         protected void ThrowIfDisposed()
         {
             if (_isDisposed)

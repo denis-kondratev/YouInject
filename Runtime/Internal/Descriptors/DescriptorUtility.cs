@@ -5,11 +5,11 @@ namespace YouInject.Internal
 {
     internal static class DescriptorUtility
     {
-        private static readonly Type ComponentType = typeof(Component);
+        private static readonly Type MonoBehaviourType = typeof(MonoBehaviour);
 
-        public static bool IsComponent(Type type)
+        public static bool IsMonoBehavior(Type type)
         {
-            return ComponentType.IsAssignableFrom(type);
+            return MonoBehaviourType.IsAssignableFrom(type);
         }
     }
 }

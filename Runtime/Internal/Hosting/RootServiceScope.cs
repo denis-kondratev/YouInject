@@ -6,7 +6,9 @@ namespace YouInject.Internal
     internal class RootServiceScope : ServiceScope, IServiceScopeFactory
     {
         private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _descriptors;
-        
+
+        protected override ServiceLifetime DynamicLifetime => ServiceLifetime.Singleton;
+
         public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
         {
             _descriptors = descriptors;
@@ -17,7 +19,7 @@ namespace YouInject.Internal
             var scope = new InheritedServiceScope(this);
             return scope;
         }
-        
+
         public override IServiceContainer GetContainer(ServiceLifetime lifetime)
         {
             ThrowIfDisposed();

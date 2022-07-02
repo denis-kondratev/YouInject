@@ -6,11 +6,13 @@ namespace YouInject.Internal
     {
         private readonly RootServiceScope _root;
 
+        protected override ServiceLifetime DynamicLifetime => ServiceLifetime.Scoped;
+
         public InheritedServiceScope(RootServiceScope root)
         {
             _root = root;
         }
-        
+
         public override IServiceContainer GetContainer(ServiceLifetime lifetime)
         {
             ThrowIfDisposed();
