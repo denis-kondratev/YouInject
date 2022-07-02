@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal static class DescriptorUtility
     {

@@ -1,6 +1,6 @@
-﻿using YouInject.Internal;
+﻿using InjectReady.YouInject.Internal;
 
-namespace YouInject
+namespace InjectReady.YouInject
 {
     public static class Host
     {

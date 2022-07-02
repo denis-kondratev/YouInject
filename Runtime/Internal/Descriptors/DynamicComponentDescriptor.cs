@@ -3,7 +3,7 @@ using System.Reflection;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class DynamicComponentDescriptor : DynamicDescriptor
     {

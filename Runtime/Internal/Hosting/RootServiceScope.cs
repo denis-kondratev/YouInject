@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class RootServiceScope : ServiceScope, IServiceScopeFactory
     {

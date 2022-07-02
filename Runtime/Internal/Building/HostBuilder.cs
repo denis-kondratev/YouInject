@@ -1,4 +1,4 @@
-﻿namespace YouInject.Internal
+﻿namespace InjectReady.YouInject.Internal
 {
     internal class HostBuilder : IHostBuilder
     {
@@ -15,7 +15,7 @@
         public IHost BuildHost()
         {
             var services = _services.Bake();
-            var host = new Host(services);
+            var host = new global::InjectReady.YouInject.Internal.Host(services);
             return host;
         }
             

@@ -2,7 +2,7 @@
 using System.Reflection;
 using UnityEngine.Assertions;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class GenericFactory
     {

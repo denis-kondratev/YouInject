@@ -1,4 +1,4 @@
-﻿namespace YouInject.Internal
+﻿namespace InjectReady.YouInject.Internal
 {
     internal interface IDynamicDescriptor : IServiceDescriptor
     {

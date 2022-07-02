@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class ServiceCollection : IServiceCollection
     {

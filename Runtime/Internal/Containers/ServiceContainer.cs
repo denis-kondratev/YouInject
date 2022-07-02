@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal abstract class ServiceContainer : IServiceContainer
     {

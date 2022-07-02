@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace YouInject
+namespace InjectReady.YouInject
 {
     public interface IServiceScope : IServiceProvider, IAsyncDisposable
     {

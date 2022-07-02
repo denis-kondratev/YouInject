@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal abstract partial class ServiceScope : IServiceScope, IContextualScope
     {

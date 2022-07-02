@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class DisposableContainer : ServiceContainer
     {
