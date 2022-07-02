@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace InjectReady.YouInject.Internal
 {
@@ -48,39 +50,41 @@ namespace InjectReady.YouInject.Internal
             if (service == null) throw new ArgumentNullException(nameof(service));
 
             ThrowIfDisposed();
-            
-            if (!serviceType.IsInstanceOfType(service))
-            {
-                throw new ArgumentException(
-                    $"The service of type '{service.GetType().Name}' is not instance of type '{serviceType.Name}'.",
-                    nameof(service));
-            }
-            
-            if (!TryGetDescriptor(serviceType, out var descriptor))
-            {
-                throw new InvalidOperationException($"The '{serviceType.Name}' service is not registered");
-            }
+            ThrowIfServiceDoesNotMatchType(serviceType, service);
 
-            if (descriptor is not IDynamicDescriptor dynamicDescriptor)
+            if (GetDescriptor(serviceType) is not IDynamicDescriptor descriptor)
             {
                 throw new InvalidOperationException($"The '{serviceType.Name}' service is not registered as dynamic one.");
             }
 
-            var lifetime = dynamicDescriptor.Lifetime;
-            var container = GetContainer(lifetime) as CachingContainer;
+            var container = GetContainerForDynamicDescriptor(descriptor);
 
-            if (container!.Contains(serviceType))
+            if (container.Contains(serviceType))
             {
                 throw new InvalidOperationException($"The '{serviceType.Name}' service already exists.");
             }
 
-            if (lifetime != DynamicLifetime)
-            {
-                dynamicDescriptor.SetLifetime(DynamicLifetime);
-                container = GetContainer(dynamicDescriptor.Lifetime) as CachingContainer;
-            }
+            OnAddingComponent(descriptor, service);
             
-            container!.AddService(serviceType, service);
+            container.AddService(serviceType, service);
+        }
+
+        private void OnAddingComponent(IDynamicDescriptor descriptor, object service)
+        {
+            if (descriptor is not ComponentDescriptor) return;
+            
+            if (service is not MonoBehaviour component)
+            {
+                throw new ArgumentException(
+                    $"Cannot dynamically add the service '{descriptor.ServiceType.FullName}'. The service is " +
+                    $"registered as Component but it is not derived from '{typeof(MonoBehaviour).FullName}'.",
+                    nameof(service));
+            }
+
+            if (DynamicLifetime is ServiceLifetime.Singleton)
+            {
+                Object.DontDestroyOnLoad(component);
+            }
         }
 
         public void RemoveService(Type serviceType)
@@ -131,12 +135,34 @@ namespace InjectReady.YouInject.Internal
         public abstract IServiceDescriptor GetDescriptor(Type serviceType);
 
         public abstract bool TryGetDescriptor(Type serviceType, [MaybeNullWhen(false)] out IServiceDescriptor descriptor);
-        
+
         protected void ThrowIfDisposed()
         {
             if (_isDisposed)
             {
                 throw new InvalidOperationException("Containers is already disposed");
+            }
+        }
+
+        private CachingContainer GetContainerForDynamicDescriptor(IDynamicDescriptor descriptor)
+        {
+            var container = GetContainer(descriptor.Lifetime) as CachingContainer;
+
+            if (descriptor.Lifetime == DynamicLifetime) return container!;
+            
+            descriptor.SetLifetime(DynamicLifetime);
+            container = GetContainer(descriptor.Lifetime) as CachingContainer;
+
+            return container!;
+        }
+        
+        private static void ThrowIfServiceDoesNotMatchType(Type serviceType, object service)
+        {
+            if (!serviceType.IsInstanceOfType(service))
+            {
+                throw new ArgumentException(
+                    $"The service of type '{service.GetType().Name}' is not instance of type '{serviceType.Name}'.",
+                    nameof(service));
             }
         }
     }

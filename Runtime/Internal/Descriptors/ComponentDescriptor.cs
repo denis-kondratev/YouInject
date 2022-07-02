@@ -5,13 +5,13 @@ using Object = UnityEngine.Object;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal class DynamicComponentDescriptor : DynamicDescriptor
+    internal class ComponentDescriptor : DynamicDescriptor
     {
         private readonly string? _initializingMethodName;
         private MethodInfo? _initializingMethod;
         private Type? _implementationType; 
 
-        public DynamicComponentDescriptor(Type serviceType, string? initializingMethodName) 
+        public ComponentDescriptor(Type serviceType, string? initializingMethodName) 
             : base(serviceType)
         {
             if (!DescriptorUtility.IsMonoBehavior(serviceType))

@@ -51,7 +51,7 @@ namespace InjectReady.YouInject.Internal
             
             ThrowIfCannotAdd(serviceType, "Cannot add dynamic component");
 
-            var descriptor = new DynamicComponentDescriptor(serviceType, initializingMethodName);
+            var descriptor = new ComponentDescriptor(serviceType, initializingMethodName);
             _descriptors.Add(serviceType, descriptor);
         }
 

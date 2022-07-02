@@ -7,6 +7,7 @@
   "unityRelease": "0f1",
   "documentationUrl": "https://github.com/Holygoe/YouInject/wiki",
   "changelogUrl": "https://github.com/Holygoe/YouInject/wiki",
+  "license": "MIT License",
   "licensesUrl": "https://github.com/Holygoe/YouInject/blob/main/LICENSE",
   "keywords": [
     "dependency-injection",
@@ -14,8 +15,6 @@
   ],
   "author": {
     "name": "Inject Ready",
-    "email": "holygoe@gmail.com",
     "url": "https://github.com/Holygoe"
-  },
-  "type": "library"
+  }
 }
