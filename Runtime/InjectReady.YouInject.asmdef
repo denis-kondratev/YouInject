@@ -1,6 +1,6 @@
 {
     "name": "YouInject",
-    "rootNamespace": "YouInject",
+    "rootNamespace": "InjectReady.YouInject",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class RootServiceScope : ServiceScope, IServiceScopeFactory
     {
@@ -17,7 +17,7 @@ namespace YouInject.Internal
             var scope = new InheritedServiceScope(this);
             return scope;
         }
-        
+
         public override IServiceContainer GetContainer(ServiceLifetime lifetime)
         {
             ThrowIfDisposed();

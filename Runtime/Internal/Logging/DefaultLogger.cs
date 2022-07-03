@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class DefaultLogger : IYouInjectLogger
     {

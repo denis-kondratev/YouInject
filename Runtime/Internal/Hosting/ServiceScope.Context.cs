@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal abstract partial class ServiceScope
     {

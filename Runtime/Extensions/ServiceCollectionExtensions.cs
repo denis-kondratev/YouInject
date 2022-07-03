@@ -1,4 +1,4 @@
-﻿namespace YouInject
+﻿namespace InjectReady.YouInject
 {
     public static class ServiceCollectionExtensions
     {
@@ -39,14 +39,28 @@
             services.AddFactory(factoryType, productType, ServiceLifetime.Scoped);
         }
 
-        public static void AddDynamicScoped<TService>(this IServiceCollection services)
-        {
-            services.AddDynamicService<TService>(ServiceLifetime.Scoped);
-        }
-        
         public static void AddDynamicSingleton<TService>(this IServiceCollection services)
         {
-            services.AddDynamicService<TService>(ServiceLifetime.Singleton);
+            var serviceType = typeof(TService);
+            services.AddDynamicService(serviceType, true);
+        }
+        
+        public static void AddDynamicScoped<TService>(this IServiceCollection services)
+        {
+            var serviceType = typeof(TService);
+            services.AddDynamicService(serviceType, false);
+        }
+        
+        public static void AddSingletonComponent<TService>(this IServiceCollection services, string? initializingMethodName = null)
+        {
+            var serviceType = typeof(TService);
+            services.AddDynamicComponent(serviceType, true, initializingMethodName);
+        }
+        
+        public static void AddScopedComponent<TService>(this IServiceCollection services, string? initializingMethodName = null)
+        {
+            var serviceType = typeof(TService);
+            services.AddDynamicComponent(serviceType, false, initializingMethodName);
         }
         
         private static void AddService<TService, TInstance>(this IServiceCollection services, ServiceLifetime lifetime)
@@ -60,12 +74,6 @@
         {
             var serviceType = typeof(TService);
             services.AddService(serviceType, serviceType, lifetime);
-        }
-
-        private static void AddDynamicService<TService>(this IServiceCollection services, ServiceLifetime lifetime)
-        {
-            var serviceType = typeof(TService);
-            services.AddDynamicService(serviceType, lifetime);
         }
     }
 }

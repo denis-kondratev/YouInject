@@ -1,16 +1,16 @@
 ﻿using System;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class InheritedServiceScope : ServiceScope
     {
         private readonly RootServiceScope _root;
-
+        
         public InheritedServiceScope(RootServiceScope root)
         {
             _root = root;
         }
-        
+
         public override IServiceContainer GetContainer(ServiceLifetime lifetime)
         {
             ThrowIfDisposed();

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class Logger
     {

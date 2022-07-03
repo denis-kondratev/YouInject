@@ -1,20 +1,20 @@
 {
-  "name": "com.youinject.youinject",
-  "version": "0.3.0",
+  "name": "com.injectready.youinject",
+  "version": "0.4.0",
   "displayName": "You Inject",
   "description": "You Inject is a short library that provides some mechanisms of the dependency injection design pattern.",
   "unity": "2021.3",
   "unityRelease": "0f1",
   "documentationUrl": "https://github.com/Holygoe/YouInject/wiki",
   "changelogUrl": "https://github.com/Holygoe/YouInject/wiki",
+  "license": "MIT License",
   "licensesUrl": "https://github.com/Holygoe/YouInject/blob/main/LICENSE",
   "keywords": [
     "dependency-injection",
     "dependencies"
   ],
   "author": {
-    "name": "You Inject",
-    "email": "holygoe@gmail.com",
+    "name": "Inject Ready",
     "url": "https://github.com/Holygoe"
   }
 }

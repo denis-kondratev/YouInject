@@ -1,16 +1,21 @@
 ﻿using System;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
-    public class DynamicDescriptor : IServiceDescriptor
+    internal class DynamicDescriptor : IServiceDescriptor
     {
-        public DynamicDescriptor(Type serviceType, ServiceLifetime lifetime)
-        {
-            ServiceType = serviceType;
-            Lifetime = lifetime;
-        }
-        
         public Type ServiceType { get; }
         public ServiceLifetime Lifetime { get; }
+
+        public DynamicDescriptor(Type serviceType, bool isSingleton)
+        {
+            ServiceType = serviceType;
+            Lifetime = isSingleton ? ServiceLifetime.Singleton : ServiceLifetime.Scoped;
+        }
+
+        public virtual object ResolveService(ContextualServiceProvider serviceProvider)
+        {
+            throw new OperationCanceledException($"The dynamic service '{ServiceType.FullName}' has not been yet added.");
+        }
     }
 }

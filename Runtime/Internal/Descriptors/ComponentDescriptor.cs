@@ -1,47 +1,61 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
-using UnityEngine;
+using Object = UnityEngine.Object;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
-    internal class ComponentDescriptor : IServiceDescriptor
+    internal class ComponentDescriptor : DynamicDescriptor
     {
-        public ComponentDescriptor(Type serviceType, Type instanceType, string initializingMethodName)
-        {
-            ServiceType = serviceType ?? throw new ArgumentNullException(nameof(serviceType));
-            Lifetime = ServiceLifetime.Scoped;
-            Initializer = GetInitializer(instanceType, initializingMethodName);
-        }
-        
-        public Type ServiceType { get; }
+        private readonly string? _initializingMethodName;
+        private MethodInfo? _initializingMethod;
+        private Type? _implementationType; 
 
-        public ServiceLifetime Lifetime { get; }
-        
-        public Action<Component, ContextualServiceProvider> Initializer { get; }
-        
-        private static Action<Component, ContextualServiceProvider> GetInitializer(Type instanceType, string methodName)
+        public ComponentDescriptor(Type serviceType, bool isSingleton, string? initializingMethodName) 
+            : base(serviceType, isSingleton)
         {
-            var methodInfo = GetInitializingMethod(instanceType, methodName);
-            var parameterTypes = methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
-
-            return (instance, context) =>
+            if (!DescriptorUtility.IsMonoBehavior(serviceType))
             {
-                var parameters = context.GetServices(parameterTypes);
-                methodInfo.Invoke(instance, parameters);
-            };
-        }
-        
-        private static MethodInfo GetInitializingMethod(Type instanceType, string methodName)
-        {
-            var methodInfo = instanceType.GetMethod(methodName);
-            
-            if (methodInfo is null)
-            {
-                throw new ArgumentException($"Cannot find the '{methodName}' method in '{instanceType.Name}' type.");
+                throw new ArgumentException(
+                    $"Cannot register the dynamic component service '{serviceType.FullName}'. " +
+                    $"It is not derived from {DescriptorUtility.MonoBehaviourType.FullName}.",
+                    nameof(serviceType));
             }
             
-            return methodInfo;
+            _initializingMethodName = initializingMethodName;
+        }
+
+        public override object ResolveService(ContextualServiceProvider serviceProvider)
+        {
+            var component = Object.FindObjectOfType(ServiceType, true);
+            var componentType = component.GetType();
+            var initializingMethod = GetInitializingMethod(componentType);
+
+            if (initializingMethod is null)
+            {
+                return component;
+            }
+            
+            var parameters = serviceProvider.GetServices(initializingMethod.GetParameters());
+            initializingMethod.Invoke(component, parameters);
+            return component;
+        }
+
+        private MethodInfo? GetInitializingMethod(Type implementationType)
+        {
+            if (implementationType == _implementationType)
+            {
+                return _initializingMethod;
+            }
+
+            _implementationType = implementationType;
+
+            if (string.IsNullOrEmpty(_initializingMethodName))
+            {
+                return null;
+            }
+
+            _initializingMethod = implementationType.GetMethod(_initializingMethodName);
+            return _initializingMethod;
         }
     }
 }

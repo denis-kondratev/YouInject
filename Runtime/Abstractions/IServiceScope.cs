@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Reflection;
 
-namespace YouInject
+namespace InjectReady.YouInject
 {
     public interface IServiceScope : IServiceProvider, IAsyncDisposable
     {
         void AddService(Type serviceType, object service);
         void RemoveService(Type serviceType);
-        void InitializeComponent(Delegate initializeDelegate);
+        void InitializeService(Delegate initializeDelegate);
+        void InitializeService(object service, MethodInfo methodInfo);
     }
 }
