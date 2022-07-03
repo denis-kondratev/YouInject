@@ -35,23 +35,23 @@ namespace InjectReady.YouInject.Internal
             _descriptors.Add(serviceType, descriptor);
         }
 
-        public void AddDynamicService(Type serviceType)
+        public void AddDynamicService(Type serviceType, bool isSingleton)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             
             ThrowIfCannotAdd(serviceType, "Cannot add dynamic service");
             
-            var descriptor = new DynamicDescriptor(serviceType);
+            var descriptor = new DynamicDescriptor(serviceType, isSingleton);
             _descriptors.Add(serviceType, descriptor);
         }
 
-        public void AddDynamicComponent(Type serviceType, string? initializingMethodName)
+        public void AddDynamicComponent(Type serviceType, bool isSingleton, string? initializingMethodName)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             
             ThrowIfCannotAdd(serviceType, "Cannot add dynamic component");
 
-            var descriptor = new ComponentDescriptor(serviceType, initializingMethodName);
+            var descriptor = new ComponentDescriptor(serviceType, isSingleton, initializingMethodName);
             _descriptors.Add(serviceType, descriptor);
         }
 

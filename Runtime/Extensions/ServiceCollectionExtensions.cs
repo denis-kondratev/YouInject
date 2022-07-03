@@ -39,22 +39,28 @@
             services.AddFactory(factoryType, productType, ServiceLifetime.Scoped);
         }
 
-        public static void AddDynamic<TService>(this IServiceCollection services)
+        public static void AddDynamicSingleton<TService>(this IServiceCollection services)
         {
             var serviceType = typeof(TService);
-            services.AddDynamicService(serviceType);
+            services.AddDynamicService(serviceType, true);
         }
         
-        public static void AddDynamicComponent<TService>(this IServiceCollection services)
+        public static void AddDynamicScoped<TService>(this IServiceCollection services)
         {
             var serviceType = typeof(TService);
-            services.AddDynamicComponent(serviceType, null);
+            services.AddDynamicService(serviceType, false);
         }
         
-        public static void AddDynamicComponent<TService>(this IServiceCollection services, string initializingMethodName)
+        public static void AddSingletonComponent<TService>(this IServiceCollection services, string? initializingMethodName = null)
         {
             var serviceType = typeof(TService);
-            services.AddDynamicComponent(serviceType, initializingMethodName);
+            services.AddDynamicComponent(serviceType, true, initializingMethodName);
+        }
+        
+        public static void AddScopedComponent<TService>(this IServiceCollection services, string? initializingMethodName = null)
+        {
+            var serviceType = typeof(TService);
+            services.AddDynamicComponent(serviceType, false, initializingMethodName);
         }
         
         private static void AddService<TService, TInstance>(this IServiceCollection services, ServiceLifetime lifetime)

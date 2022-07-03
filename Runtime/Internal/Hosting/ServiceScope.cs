@@ -15,8 +15,6 @@ namespace InjectReady.YouInject.Internal
         private readonly Stack<ContextualServiceProvider> _contextPool;
         private bool _isDisposed;
 
-        protected abstract ServiceLifetime DynamicLifetime { get; }
-        
         protected ServiceScope()
         {
             ScopedContainer = new CachingContainer();
@@ -52,24 +50,23 @@ namespace InjectReady.YouInject.Internal
             ThrowIfDisposed();
             ThrowIfServiceDoesNotMatchType(serviceType, service);
 
-            if (GetDescriptor(serviceType) is not IDynamicDescriptor descriptor)
+            if (GetDescriptor(serviceType) is not DynamicDescriptor descriptor)
             {
                 throw new InvalidOperationException($"The '{serviceType.Name}' service is not registered as dynamic one.");
             }
 
-            var container = GetContainerForDynamicDescriptor(descriptor);
-
-            if (container.Contains(serviceType))
+            var container = GetContainer(descriptor.Lifetime) as CachingContainer;
+            
+            if (container!.Contains(serviceType))
             {
                 throw new InvalidOperationException($"The '{serviceType.Name}' service already exists.");
             }
 
             OnAddingComponent(descriptor, service);
-            
             container.AddService(serviceType, service);
         }
 
-        private void OnAddingComponent(IDynamicDescriptor descriptor, object service)
+        private void OnAddingComponent(DynamicDescriptor descriptor, object service)
         {
             if (descriptor is not ComponentDescriptor) return;
             
@@ -81,7 +78,7 @@ namespace InjectReady.YouInject.Internal
                     nameof(service));
             }
 
-            if (DynamicLifetime is ServiceLifetime.Singleton)
+            if (descriptor.Lifetime is ServiceLifetime.Singleton)
             {
                 Object.DontDestroyOnLoad(component);
             }
@@ -142,18 +139,6 @@ namespace InjectReady.YouInject.Internal
             {
                 throw new InvalidOperationException("Containers is already disposed");
             }
-        }
-
-        private CachingContainer GetContainerForDynamicDescriptor(IDynamicDescriptor descriptor)
-        {
-            var container = GetContainer(descriptor.Lifetime) as CachingContainer;
-
-            if (descriptor.Lifetime == DynamicLifetime) return container!;
-            
-            descriptor.SetLifetime(DynamicLifetime);
-            container = GetContainer(descriptor.Lifetime) as CachingContainer;
-
-            return container!;
         }
         
         private static void ThrowIfServiceDoesNotMatchType(Type serviceType, object service)

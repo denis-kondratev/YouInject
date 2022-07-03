@@ -6,7 +6,7 @@ namespace InjectReady.YouInject
     {
         void AddFactory(Type factoryType, Type productType, ServiceLifetime lifetime);
         void AddService(Type serviceType, Type instanceType, ServiceLifetime lifetime);
-        void AddDynamicService(Type serviceType);
-        void AddDynamicComponent(Type serviceType, string? initializingMethodName);
+        void AddDynamicService(Type serviceType, bool isSingleton);
+        void AddDynamicComponent(Type serviceType, bool isSingleton, string? initializingMethodName);
     }
 }

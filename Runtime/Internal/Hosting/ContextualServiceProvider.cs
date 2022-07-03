@@ -8,7 +8,8 @@ namespace InjectReady.YouInject.Internal
     {
         private readonly IContextualScope _scope;
         private readonly Stack<IServiceDescriptor> _requestStack;
-        private int _singletonPosition;
+        private int _singletonPositionInStack;
+        private IServiceDescriptor? _singletonDescriptor;
 
         public ContextualServiceProvider(IContextualScope scope)
         {
@@ -16,7 +17,7 @@ namespace InjectReady.YouInject.Internal
             _requestStack = new Stack<IServiceDescriptor>();
         }
 
-        private bool IsSingleton => _singletonPosition > 0;
+        private bool HasSingletonInStack => _singletonDescriptor is not null;
         
         public object GetService(Type serviceType)
         {
@@ -25,7 +26,7 @@ namespace InjectReady.YouInject.Internal
             var descriptor = _scope.GetDescriptor(serviceType);
             PushService(descriptor);
             
-            var lifetime = IsSingleton ? ServiceLifetime.Singleton : descriptor.Lifetime;
+            var lifetime = HasSingletonInStack ? ServiceLifetime.Singleton : descriptor.Lifetime;
             var container = _scope.GetContainer(lifetime);
             var service = container.GetService(descriptor, this);
             
@@ -66,7 +67,7 @@ namespace InjectReady.YouInject.Internal
 
         public void Release()
         {
-            _singletonPosition = 0;
+            _singletonPositionInStack = 0;
             _requestStack.Clear();
         }
 
@@ -79,23 +80,31 @@ namespace InjectReady.YouInject.Internal
                 var anotherType = _requestStack.Peek().ServiceType;
                 throw new InvalidOperationException($"'{serviceType.Name}' and '{anotherType.Name}' services refer on each other.");
             }
+
+            if (_singletonDescriptor is not null && descriptor is DynamicDescriptor { Lifetime: ServiceLifetime.Scoped })
+            {
+                throw new ServiceRegistrationException(
+                    _singletonDescriptor, 
+                    $"The singleton service '{_singletonDescriptor.ServiceType.FullName}' cannot refer to " +
+                    $"the non-singleton dynamic service '{descriptor.ServiceType.FullName}'.");
+            }
             
             _requestStack.Push(descriptor);
+
+            if (HasSingletonInStack || descriptor.Lifetime is not ServiceLifetime.Singleton) return;
             
-            if (!IsSingleton && descriptor.Lifetime is ServiceLifetime.Singleton)
-            {
-                _singletonPosition = _requestStack.Count;
-            }
+            _singletonPositionInStack = _requestStack.Count;
+            _singletonDescriptor = descriptor;
         }
 
         private void PopService()
         {
             _requestStack.Pop();
 
-            if (IsSingleton && _singletonPosition > _requestStack.Count)
-            {
-                _singletonPosition = 0;
-            }
+            if (!HasSingletonInStack || _singletonPositionInStack <= _requestStack.Count) return;
+            
+            _singletonPositionInStack = 0;
+            _singletonDescriptor = null;
         }
     }
 }

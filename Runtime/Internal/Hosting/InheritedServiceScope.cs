@@ -5,9 +5,7 @@ namespace InjectReady.YouInject.Internal
     internal class InheritedServiceScope : ServiceScope
     {
         private readonly RootServiceScope _root;
-
-        protected override ServiceLifetime DynamicLifetime => ServiceLifetime.Scoped;
-
+        
         public InheritedServiceScope(RootServiceScope root)
         {
             _root = root;

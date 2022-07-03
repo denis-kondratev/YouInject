@@ -14,8 +14,8 @@
             
         public IHost BuildHost()
         {
-            var services = _services.Bake();
-            var host = new global::InjectReady.YouInject.Internal.Host(services);
+            var serviceDescriptors = _services.Bake();
+            var host = new Host(serviceDescriptors);
             return host;
         }
             
@@ -23,7 +23,7 @@
         {
             _services.AddSingleton<IYouInjectLogger, DefaultLogger>();
             _services.AddSingleton<Logger>();
-            _services.AddDynamic<IServiceScopeFactory>();
+            _services.AddDynamicSingleton<IServiceScopeFactory>();
         }
     }
 }

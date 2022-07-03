@@ -6,9 +6,7 @@ namespace InjectReady.YouInject.Internal
     internal class RootServiceScope : ServiceScope, IServiceScopeFactory
     {
         private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _descriptors;
-
-        protected override ServiceLifetime DynamicLifetime => ServiceLifetime.Singleton;
-
+        
         public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
         {
             _descriptors = descriptors;

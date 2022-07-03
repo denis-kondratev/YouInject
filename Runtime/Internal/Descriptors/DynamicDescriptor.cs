@@ -2,30 +2,20 @@
 
 namespace InjectReady.YouInject.Internal
 {
-    internal class DynamicDescriptor : IDynamicDescriptor
+    internal class DynamicDescriptor : IServiceDescriptor
     {
         public Type ServiceType { get; }
-        public ServiceLifetime Lifetime { get; private set; }
+        public ServiceLifetime Lifetime { get; }
 
-        public DynamicDescriptor(Type serviceType)
+        public DynamicDescriptor(Type serviceType, bool isSingleton)
         {
             ServiceType = serviceType;
-            Lifetime = ServiceLifetime.Scoped;
+            Lifetime = isSingleton ? ServiceLifetime.Singleton : ServiceLifetime.Scoped;
         }
 
         public virtual object ResolveService(ContextualServiceProvider serviceProvider)
         {
-            throw new OperationCanceledException($"The dynamic service '{ServiceType.FullName}' has not been added");
-        }
-
-        public void SetLifetime(ServiceLifetime lifetime)
-        {
-            if (lifetime == ServiceLifetime.Transient)
-            {
-                throw new ArgumentOutOfRangeException(nameof(lifetime), "DynamicDescriptor cannot be Transient.");
-            }
-            
-            Lifetime = lifetime;
+            throw new OperationCanceledException($"The dynamic service '{ServiceType.FullName}' has not been yet added.");
         }
     }
 }

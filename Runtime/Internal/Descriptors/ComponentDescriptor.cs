@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace InjectReady.YouInject.Internal
@@ -11,14 +10,14 @@ namespace InjectReady.YouInject.Internal
         private MethodInfo? _initializingMethod;
         private Type? _implementationType; 
 
-        public ComponentDescriptor(Type serviceType, string? initializingMethodName) 
-            : base(serviceType)
+        public ComponentDescriptor(Type serviceType, bool isSingleton, string? initializingMethodName) 
+            : base(serviceType, isSingleton)
         {
             if (!DescriptorUtility.IsMonoBehavior(serviceType))
             {
                 throw new ArgumentException(
-                    $"Cannot register the dynamic component service '{serviceType.FullName}'. It is not derived " +
-                    $"from {typeof(MonoBehaviour).FullName}.",
+                    $"Cannot register the dynamic component service '{serviceType.FullName}'. " +
+                    $"It is not derived from {DescriptorUtility.MonoBehaviourType.FullName}.",
                     nameof(serviceType));
             }
             

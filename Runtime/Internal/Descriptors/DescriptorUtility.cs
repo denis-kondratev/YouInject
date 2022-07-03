@@ -5,7 +5,7 @@ namespace InjectReady.YouInject.Internal
 {
     internal static class DescriptorUtility
     {
-        private static readonly Type MonoBehaviourType = typeof(MonoBehaviour);
+        public static readonly Type MonoBehaviourType = typeof(MonoBehaviour);
 
         public static bool IsMonoBehavior(Type type)
         {
