@@ -2,6 +2,6 @@
 {
     internal interface IServiceScopeFactory
     {
-        ServiceScope CreateScope();
+        ServiceScope CreateScope(ThruContainer scopedContainer);
     }
 }

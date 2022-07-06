@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace InjectReady.YouInject.Internal
 {
@@ -6,7 +7,11 @@ namespace InjectReady.YouInject.Internal
     {
         private readonly RootServiceScope _root;
         
-        public InheritedServiceScope(RootServiceScope root)
+        public InheritedServiceScope(
+            RootServiceScope root,
+            Stack<ContextualServiceProvider> contextPool,
+            ThruContainer scopedContainer)
+            : base(contextPool, scopedContainer)
         {
             _root = root;
         }

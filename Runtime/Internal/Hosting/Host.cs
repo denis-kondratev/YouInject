@@ -8,7 +8,20 @@ namespace InjectReady.YouInject.Internal
     {
         private readonly RootServiceScope _serviceScope;
 
-        public IServiceScope RootScope => _serviceScope;
+        public IServiceScope RootScope
+        {
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException("Host has already been disposed of.");
+                }
+                
+                return _serviceScope;
+            }
+        }
+
+        private bool _isDisposed;
 
         public Host(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
         {
@@ -16,9 +29,12 @@ namespace InjectReady.YouInject.Internal
             _serviceScope.AddService(typeof(IServiceScopeFactory), _serviceScope);
         }
         
-        public ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
-            return _serviceScope.DisposeAsync();
+            if (_isDisposed) return;
+            
+            _isDisposed = true;
+            await _serviceScope.DisposeAsync();
         }
     }
 }

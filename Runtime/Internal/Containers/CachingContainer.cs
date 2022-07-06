@@ -4,6 +4,22 @@ using System.Threading.Tasks;
 
 namespace InjectReady.YouInject.Internal
 {
+    internal class ThruContainer : CachingContainer
+    {
+        private readonly CachingContainer _parentContainer;
+
+        public ThruContainer(CachingContainer parentContainer)
+        {
+            _parentContainer = parentContainer;
+        }
+
+        public override bool TryGetService(Type serviceType, out object service)
+        {
+            return base.TryGetService(serviceType, out service) 
+                   || _parentContainer.TryGetService(serviceType, out service);
+        }
+    }
+    
     internal class CachingContainer : ServiceContainer
     {
         private readonly Dictionary<Type, object> _services;
@@ -40,7 +56,7 @@ namespace InjectReady.YouInject.Internal
             
             ThrowIfDisposed();
             
-            if (_services.TryGetValue(descriptor.ServiceType, out var service))
+            if (TryGetService(descriptor.ServiceType, out var service))
             {
                 return service;
             }
@@ -72,6 +88,11 @@ namespace InjectReady.YouInject.Internal
         public bool Contains(Type serviceType)
         {
             return _services.ContainsKey(serviceType);
+        }
+
+        public virtual bool TryGetService(Type serviceType, out object service)
+        {
+            return _services.TryGetValue(serviceType, out service);
         }
     }
 }

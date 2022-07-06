@@ -7,7 +7,8 @@ namespace InjectReady.YouInject.Internal
     {
         private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _descriptors;
         
-        public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
+        public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors) 
+            : base(new Stack<ContextualServiceProvider>(), new CachingContainer())
         {
             _descriptors = descriptors;
         }
@@ -47,9 +48,9 @@ namespace InjectReady.YouInject.Internal
             return _descriptors.TryGetValue(serviceType, out descriptor);
         }
 
-        ServiceScope IServiceScopeFactory.CreateScope()
+        public ServiceScope CreateScope(ThruContainer scopedContainer)
         {
-            var scope = new InheritedServiceScope(this);
+            var scope = new InheritedServiceScope(this, ContextPool, scopedContainer);
             return scope;
         }
     }

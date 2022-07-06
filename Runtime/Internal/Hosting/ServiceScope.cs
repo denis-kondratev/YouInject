@@ -12,20 +12,20 @@ namespace InjectReady.YouInject.Internal
     {
         protected readonly CachingContainer ScopedContainer;
         protected readonly DisposableContainer TransientContainer;
-        private readonly Stack<ContextualServiceProvider> _contextPool;
+        protected readonly Stack<ContextualServiceProvider> ContextPool;
         private bool _isDisposed;
         private readonly List<ServiceScope> _derivedScopes;
 
         public event Action<ServiceScope>? Disposed;
         
-        protected ServiceScope()
+        protected ServiceScope(Stack<ContextualServiceProvider> contextPool, CachingContainer scopedContainer)
         {
-            ScopedContainer = new CachingContainer();
+            ScopedContainer = scopedContainer;
             TransientContainer = new DisposableContainer();
-            _contextPool = new Stack<ContextualServiceProvider>();
+            ContextPool = contextPool;
             _derivedScopes = new List<ServiceScope>();
         }
-        
+
         public async ValueTask DisposeAsync()
         {
             if (_isDisposed) return;
@@ -182,7 +182,8 @@ namespace InjectReady.YouInject.Internal
         public IServiceScope CreateScope()
         {
             var scopeFactory = this.GetService<IServiceScopeFactory>();
-            var derivedScope = scopeFactory.CreateScope();
+            var thruContainer = new ThruContainer(ScopedContainer);
+            var derivedScope = scopeFactory.CreateScope(thruContainer);
             _derivedScopes.Add(derivedScope);
 
             derivedScope.Disposed += scope =>

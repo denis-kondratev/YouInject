@@ -11,7 +11,8 @@ namespace InjectReady.YouInject.Internal
             public Context(ServiceScope serviceScope)
             {
                 _serviceScope = serviceScope;
-                if (!serviceScope._contextPool.TryPop(out var serviceProvider))
+                
+                if (!serviceScope.ContextPool.TryPop(out var serviceProvider))
                 {
                     serviceProvider = new ContextualServiceProvider(serviceScope);
                 }
@@ -24,7 +25,7 @@ namespace InjectReady.YouInject.Internal
             public void Dispose()
             {
                 ServiceProvider.Release();
-                _serviceScope._contextPool.Push(ServiceProvider);
+                _serviceScope.ContextPool.Push(ServiceProvider);
                 ServiceProvider = null!;
                 _serviceScope = null!;
             }
