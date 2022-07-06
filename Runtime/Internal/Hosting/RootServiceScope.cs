@@ -41,7 +41,8 @@ namespace InjectReady.YouInject.Internal
             
             if (!TryGetDescriptor(serviceType, out var descriptor))
             {
-                throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
+                throw new ServiceRegistrationException(serviceType, "Service is not registered.");
+                //throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
             }
 
             return descriptor;

@@ -59,11 +59,17 @@ namespace InjectReady.YouInject.Internal
             
             if (container!.Contains(serviceType))
             {
-                throw new InvalidOperationException($"The '{serviceType.Name}' service already exists.");
+                throw new InvalidOperationException($"Cannot add the service '{serviceType.Name}'. It already exists.");
             }
 
             OnAddingComponent(descriptor, service);
             container.AddService(serviceType, service);
+        }
+
+        public void AddService<T>(object service)
+        {
+            var serviceType = typeof(T);
+            AddService(serviceType, service);
         }
 
         private void OnAddingComponent(DynamicDescriptor descriptor, object service)
@@ -101,17 +107,38 @@ namespace InjectReady.YouInject.Internal
             var container = GetContainer(descriptor.Lifetime) as CachingContainer;
             container!.RemoveService(descriptor.ServiceType);
         }
-
-        public void InitializeService(Delegate initializeDelegate)
+        
+        public void InitializeService(Type serviceType, object service)
         {
-            if (initializeDelegate == null) throw new ArgumentNullException(nameof(initializeDelegate));
-
+            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
+            if (service == null) throw new ArgumentNullException(nameof(service));
+            
             ThrowIfDisposed();
 
-            using var context = new Context(this);
-            var parameterTypes = initializeDelegate.Method.GetParameters();
-            var parameters = context.ServiceProvider.GetServices(parameterTypes);
-            initializeDelegate.DynamicInvoke(parameters);
+            if (GetDescriptor(serviceType) is not ComponentDescriptor descriptor)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot initialize service of type '{serviceType.FullName}'. " +
+                    "It must be registered as Component.");
+            }
+
+            var implementationType = service.GetType();
+            var initializingMethod = descriptor.GetInitializingMethod(implementationType);
+
+            if (initializingMethod is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot initialize service of type '{serviceType.FullName}'. " +
+                    "There is no registered initializing method.");
+            }
+            
+            InitializeService(service, initializingMethod);
+        }
+
+        public void InitializeService<T>(T service) where T : MonoBehaviour
+        {
+            var serviceType = typeof(T);
+            InitializeService(serviceType, service);
         }
 
         public void InitializeService(object service, MethodInfo methodInfo)
@@ -125,6 +152,19 @@ namespace InjectReady.YouInject.Internal
             var parameterTypes = methodInfo.GetParameters();
             var parameters = context.ServiceProvider.GetServices(parameterTypes);
             methodInfo.Invoke(service, parameters);
+        }
+
+        public void InitializeService(object service, string methodName)
+        {
+            var serviceType = service.GetType();
+            var methodInfo = serviceType.GetMethod(methodName);
+
+            if (methodInfo is null)
+            {
+                throw new ArgumentException($"Cannot find the method {methodName} in the type {serviceType.FullName}");
+            }
+            
+            InitializeService(service, methodInfo);
         }
 
         public abstract IServiceContainer GetContainer(ServiceLifetime lifetime);

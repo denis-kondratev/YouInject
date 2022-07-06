@@ -84,7 +84,7 @@ namespace InjectReady.YouInject.Internal
             if (_singletonDescriptor is not null && descriptor is DynamicDescriptor { Lifetime: ServiceLifetime.Scoped })
             {
                 throw new ServiceRegistrationException(
-                    _singletonDescriptor, 
+                    _singletonDescriptor.ServiceType, 
                     $"The singleton service '{_singletonDescriptor.ServiceType.FullName}' cannot refer to " +
                     $"the non-singleton dynamic service '{descriptor.ServiceType.FullName}'.");
             }
