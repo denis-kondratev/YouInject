@@ -13,5 +13,6 @@ namespace InjectReady.YouInject
         public void InitializeService<T>(T service) where T : MonoBehaviour;
         void InitializeService(object service, MethodInfo methodInfo);
         void InitializeService(object service, string methodName);
+        IServiceScope CreateScope();
     }
 }

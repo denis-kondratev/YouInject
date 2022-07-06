@@ -8,27 +8,39 @@ using Object = UnityEngine.Object;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal abstract partial class ServiceScope : IServiceScope, IContextualScope
+    internal abstract partial class ServiceScope : IServiceScope, IContextualScope, INotifyOnDisposed<ServiceScope>
     {
         protected readonly CachingContainer ScopedContainer;
         protected readonly DisposableContainer TransientContainer;
         private readonly Stack<ContextualServiceProvider> _contextPool;
         private bool _isDisposed;
+        private readonly List<ServiceScope> _derivedScopes;
 
+        public event Action<ServiceScope>? Disposed;
+        
         protected ServiceScope()
         {
             ScopedContainer = new CachingContainer();
             TransientContainer = new DisposableContainer();
             _contextPool = new Stack<ContextualServiceProvider>();
+            _derivedScopes = new List<ServiceScope>();
         }
         
         public async ValueTask DisposeAsync()
         {
             if (_isDisposed) return;
+            
             _isDisposed = true;
             
-            await ScopedContainer.DisposeAsync().ConfigureAwait(false);
-            await TransientContainer.DisposeAsync().ConfigureAwait(false);
+            foreach (var derivedScope in _derivedScopes)
+            {
+                await derivedScope.DisposeAsync();
+            }
+
+            await ScopedContainer.DisposeAsync();
+            await TransientContainer.DisposeAsync();
+            
+            Disposed?.Invoke(this);
         }
         
         public object GetService(Type serviceType)
@@ -165,6 +177,22 @@ namespace InjectReady.YouInject.Internal
             }
             
             InitializeService(service, methodInfo);
+        }
+
+        public IServiceScope CreateScope()
+        {
+            var scopeFactory = this.GetService<IServiceScopeFactory>();
+            var derivedScope = scopeFactory.CreateScope();
+            _derivedScopes.Add(derivedScope);
+
+            derivedScope.Disposed += scope =>
+            {
+                if (_isDisposed) return;
+
+                _derivedScopes.Remove(scope);
+            };
+
+            return derivedScope;
         }
 
         public abstract IServiceContainer GetContainer(ServiceLifetime lifetime);

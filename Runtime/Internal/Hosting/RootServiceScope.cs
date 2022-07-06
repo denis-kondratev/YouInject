@@ -12,12 +12,6 @@ namespace InjectReady.YouInject.Internal
             _descriptors = descriptors;
         }
 
-        public IServiceScope CreateScope()
-        {
-            var scope = new InheritedServiceScope(this);
-            return scope;
-        }
-
         public override IServiceContainer GetContainer(ServiceLifetime lifetime)
         {
             ThrowIfDisposed();
@@ -32,7 +26,7 @@ namespace InjectReady.YouInject.Internal
 
             return container;
         }
-        
+
         public override IServiceDescriptor GetDescriptor(Type serviceType)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
@@ -51,6 +45,12 @@ namespace InjectReady.YouInject.Internal
         public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
         {
             return _descriptors.TryGetValue(serviceType, out descriptor);
+        }
+
+        ServiceScope IServiceScopeFactory.CreateScope()
+        {
+            var scope = new InheritedServiceScope(this);
+            return scope;
         }
     }
 }
