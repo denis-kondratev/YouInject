@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal class InheritedServiceScope : ServiceScope
+    internal class ThruServiceScope : ServiceScope
     {
         private readonly RootServiceScope _root;
         
-        public InheritedServiceScope(
+        public ThruServiceScope(
             RootServiceScope root,
             Stack<ContextualServiceProvider> contextPool,
             ThruContainer scopedContainer)

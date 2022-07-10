@@ -50,7 +50,7 @@ namespace InjectReady.YouInject.Internal
 
         public ServiceScope CreateScope(ThruContainer scopedContainer)
         {
-            var scope = new InheritedServiceScope(this, ContextPool, scopedContainer);
+            var scope = new ThruServiceScope(this, ContextPool, scopedContainer);
             return scope;
         }
     }
