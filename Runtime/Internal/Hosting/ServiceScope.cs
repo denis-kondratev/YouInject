@@ -8,7 +8,7 @@ using Object = UnityEngine.Object;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal abstract partial class ServiceScope : IServiceScope, IContextualScope, INotifyOnDisposed<ServiceScope>
+    internal abstract partial class ServiceScope : IServiceScope, IContextualScope, IExtendedServiceProvider
     {
         protected readonly CachingContainer ScopedContainer;
         protected readonly DisposableContainer TransientContainer;
@@ -54,7 +54,7 @@ namespace InjectReady.YouInject.Internal
             return service;
         }
 
-        public void AddService(Type serviceType, object service)
+        public void AddDynamicService(Type serviceType, object service)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             if (service == null) throw new ArgumentNullException(nameof(service));
@@ -78,6 +78,11 @@ namespace InjectReady.YouInject.Internal
             container.AddService(serviceType, service);
         }
 
+        public void AddMonoBehaviourService(MonoBehaviour instance)
+        {
+            throw new NotImplementedException();
+        }
+
         public void RemoveMonoBehaviourService(MonoBehaviour instance)
         {
             throw new NotImplementedException();
@@ -88,10 +93,15 @@ namespace InjectReady.YouInject.Internal
             throw new NotImplementedException();
         }
 
+        public void RememberMonoBehaviourService(MonoBehaviour instance)
+        {
+            throw new NotImplementedException();
+        }
+
         public void AddService<T>(object service)
         {
             var serviceType = typeof(T);
-            AddService(serviceType, service);
+            AddDynamicService(serviceType, service);
         }
 
         private void OnAddingComponent(DynamicDescriptor descriptor, object service)
@@ -194,11 +204,13 @@ namespace InjectReady.YouInject.Internal
             throw new NotImplementedException();
         }
 
+        public IExtendedServiceProvider ServiceProvider => this;
         public abstract IServiceContainer GetContainer(ServiceLifetime lifetime);
 
         public abstract IServiceDescriptor GetDescriptor(Type serviceType);
 
         public abstract bool TryGetDescriptor(Type serviceType, [MaybeNullWhen(false)] out IServiceDescriptor descriptor);
+
 
         protected void ThrowIfDisposed()
         {
@@ -207,7 +219,7 @@ namespace InjectReady.YouInject.Internal
                 throw new InvalidOperationException("Containers is already disposed");
             }
         }
-        
+
         private static void ThrowIfServiceDoesNotMatchType(Type serviceType, object service)
         {
             if (!serviceType.IsInstanceOfType(service))

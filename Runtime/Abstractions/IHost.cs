@@ -4,6 +4,6 @@ namespace InjectReady.YouInject
 {
     public interface IHost : IAsyncDisposable
     {
-        IServiceProvider ServiceProvider { get; }
+        IExtendedServiceProvider ServiceProvider { get; }
     }
 }
