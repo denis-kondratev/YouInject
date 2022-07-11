@@ -5,7 +5,7 @@ namespace InjectReady.YouInject.Internal
     [Serializable]
     internal class ServiceRegistrationException : Exception
     {
-        private readonly Type? _serviceType;
+        private readonly Type _serviceType;
 
         public ServiceRegistrationException(Type serviceType, string message) : base(message)
         {
@@ -16,8 +16,6 @@ namespace InjectReady.YouInject.Internal
         {
             get
             {
-                if (_serviceType is null) return base.Message;
-
                 var message = $"Incorrect registration of the '{_serviceType.FullName}' service.\n";
                 return message + base.Message;
             }

@@ -36,7 +36,7 @@
         {
             var factoryType = typeof(TFactory);
             var productType = typeof(TProduct);
-            services.AddFactory(factoryType, productType, ServiceLifetime.Scoped);
+            //services.AddDelegateFactory(factoryType, productType, ServiceLifetime.Scoped);
         }
 
         public static void AddDynamicSingleton<TService>(this IServiceCollection services)
@@ -54,13 +54,13 @@
         public static void AddSingletonComponent<TService>(this IServiceCollection services, string? initializingMethodName = null)
         {
             var serviceType = typeof(TService);
-            services.AddDynamicComponent(serviceType, true, initializingMethodName);
+            //services.AddDynamicComponent(serviceType, true, initializingMethodName);
         }
         
         public static void AddScopedComponent<TService>(this IServiceCollection services, string? initializingMethodName = null)
         {
             var serviceType = typeof(TService);
-            services.AddDynamicComponent(serviceType, false, initializingMethodName);
+            //services.AddDynamicComponent(serviceType, false, initializingMethodName);
         }
         
         private static void AddService<TService, TInstance>(this IServiceCollection services, ServiceLifetime lifetime)

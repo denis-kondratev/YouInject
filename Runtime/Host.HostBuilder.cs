@@ -26,9 +26,7 @@ namespace InjectReady.YouInject
             
             private void AddBuiltInServices()
             {
-                _services.AddSingleton<IYouInjectLogger, DefaultLogger>();
-                _services.AddSingleton<Logger>();
-                _services.AddDynamicSingleton<IServiceScopeFactory>();
+                _services.AddDynamicService(typeof(IServiceScopeFactory), true);
             }
         }
     }

@@ -4,9 +4,10 @@ namespace InjectReady.YouInject
 {
     public interface IServiceCollection
     {
-        void AddFactory(Type factoryType, Type productType, ServiceLifetime lifetime);
-        void AddService(Type serviceType, Type instanceType, ServiceLifetime lifetime);
+        void AddDelegateFactory(Delegate delegateType, Type productType, ServiceLifetime lifetime);
+        void AddService(Type serviceType, Type implementationType, ServiceLifetime lifetime);
         void AddDynamicService(Type serviceType, bool isSingleton);
-        void AddDynamicComponent(Type serviceType, bool isSingleton, string? initializingMethodName);
+        void BindMonoBehaviourToService(Type monoBehaviourType, Type serviceType);
+        void AddMonoBehaviourInitialization(Type monoBehaviourType, string? initializingMethodName);
     }
 }

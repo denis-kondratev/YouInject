@@ -13,7 +13,7 @@ namespace InjectReady.YouInject.Internal
             _descriptors = new Dictionary<Type, IServiceDescriptor>();
         }
         
-        public void AddFactory(Type factoryType, Type productType, ServiceLifetime lifetime)
+        public void AddDelegateFactory(Type factoryType, Type productType, ServiceLifetime lifetime)
         {
             if (factoryType == null) throw new ArgumentNullException(nameof(factoryType));
             if (productType == null) throw new ArgumentNullException(nameof(productType));
@@ -22,6 +22,11 @@ namespace InjectReady.YouInject.Internal
             
             var descriptor = new FactoryDescriptor(factoryType, productType, lifetime);
             _descriptors.Add(factoryType, descriptor);
+        }
+
+        public void AddDelegateFactory(Delegate delegateType, Type productType, ServiceLifetime lifetime)
+        {
+            throw new NotImplementedException();
         }
 
         public void AddService(Type serviceType, Type instanceType, ServiceLifetime lifetime)
@@ -43,6 +48,16 @@ namespace InjectReady.YouInject.Internal
             
             var descriptor = new DynamicDescriptor(serviceType, isSingleton);
             _descriptors.Add(serviceType, descriptor);
+        }
+
+        public void BindMonoBehaviourToService(Type monoBehaviourType, Type serviceType)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddMonoBehaviourInitialization(Type monoBehaviourType, string? initializingMethodName)
+        {
+            throw new NotImplementedException();
         }
 
         public void AddDynamicComponent(Type serviceType, bool isSingleton, string? initializingMethodName)

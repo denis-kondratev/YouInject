@@ -78,6 +78,16 @@ namespace InjectReady.YouInject.Internal
             container.AddService(serviceType, service);
         }
 
+        public void RemoveMonoBehaviourService(MonoBehaviour instance)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void InitializeMonoBehaviourService(MonoBehaviour instance)
+        {
+            throw new NotImplementedException();
+        }
+
         public void AddService<T>(object service)
         {
             var serviceType = typeof(T);
@@ -102,7 +112,7 @@ namespace InjectReady.YouInject.Internal
             }
         }
 
-        public void RemoveService(Type serviceType)
+        public void RemoveMonoBehaviour(Type serviceType)
         {
             if (_isDisposed) return;
 
@@ -181,19 +191,7 @@ namespace InjectReady.YouInject.Internal
 
         public IServiceScope CreateScope()
         {
-            var scopeFactory = this.GetService<IServiceScopeFactory>();
-            var thruContainer = new ThruContainer(ScopedContainer);
-            var derivedScope = scopeFactory.CreateScope(thruContainer);
-            _derivedScopes.Add(derivedScope);
-
-            derivedScope.Disposed += scope =>
-            {
-                if (_isDisposed) return;
-
-                _derivedScopes.Remove(scope);
-            };
-
-            return derivedScope;
+            throw new NotImplementedException();
         }
 
         public abstract IServiceContainer GetContainer(ServiceLifetime lifetime);
