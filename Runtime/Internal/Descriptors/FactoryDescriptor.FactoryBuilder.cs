@@ -4,23 +4,23 @@ using System.Reflection;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal partial class FactoryDescriptor
+    internal partial class DelegateFactoryDescriptor
     {
         private class FactoryBuilder
         {
-            private readonly FactoryDescriptor _descriptor;
+            private readonly DelegateFactoryDescriptor _descriptor;
             private readonly Type[] _steadyParameterTypes;
             private readonly int _totalParameterCount;
             private readonly MethodInfo _factoryMethodInfo;
             
-            public FactoryBuilder(FactoryDescriptor descriptor)
+            public FactoryBuilder(DelegateFactoryDescriptor descriptor)
             {
                 _descriptor = descriptor ?? throw new ArgumentNullException(nameof(descriptor));
                 var factoryDelegate = descriptor.ServiceType.GetMethod("Invoke")!;
                 var delegateParameters = factoryDelegate.GetParameters();
 
-                _steadyParameterTypes = GetSteadyParameterTypes(delegateParameters, descriptor._productType) 
-                                        ?? ThrowCannotFindSuitableConstructor(descriptor.ServiceType, descriptor._productType);
+                _steadyParameterTypes = GetSteadyParameterTypes(delegateParameters, descriptor._productInstanceType) 
+                                        ?? ThrowCannotFindSuitableConstructor(descriptor.ServiceType, descriptor._productInstanceType);
                 _totalParameterCount = delegateParameters.Length + _steadyParameterTypes.Length;
                 var delegateParameterTypes = delegateParameters.Select(p => p.ParameterType).ToArray();
                 _factoryMethodInfo = GetFactoryMethodInfo(factoryDelegate.ReturnType, delegateParameterTypes);
@@ -36,7 +36,7 @@ namespace InjectReady.YouInject.Internal
             private GenericFactory BuildFactory(ContextualServiceProvider context)
             {
                 var steadyParameters = context.GetServices(_steadyParameterTypes);
-                var factory = new GenericFactory(_descriptor._productType, steadyParameters, _totalParameterCount);
+                var factory = new GenericFactory(_descriptor._productInstanceType, steadyParameters, _totalParameterCount);
                 return factory;
             }
 

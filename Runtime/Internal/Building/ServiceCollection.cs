@@ -5,92 +5,162 @@ namespace InjectReady.YouInject.Internal
 {
     internal class ServiceCollection : IServiceCollection
     {
-        private readonly Dictionary<Type, IServiceDescriptor> _descriptors; 
+        private readonly Dictionary<Type, IServiceDescriptor> _serviceMap;
+        private readonly Dictionary<Type, ComponentDescriptor> _componentMap;
         private bool _isBaked;
+
+        public Dictionary<Type, IServiceDescriptor> ServiceMap
+        {
+            get
+            {
+                ThrowIfNotBaked();
+                return _serviceMap;
+            }
+        }
+        
+        public Dictionary<Type, ComponentDescriptor> ComponentMap
+        {
+            get
+            {
+                ThrowIfNotBaked();
+                return _componentMap;
+            }
+        }
 
         internal ServiceCollection()
         {
-            _descriptors = new Dictionary<Type, IServiceDescriptor>();
+            _serviceMap = new Dictionary<Type, IServiceDescriptor>();
+            _componentMap = new Dictionary<Type, ComponentDescriptor>();
         }
         
-        public void AddDelegateFactory(Type factoryType, Type productType, ServiceLifetime lifetime)
+        public void AddDelegateFactory(Type delegateFactoryType, Type productInstanceType, ServiceLifetime lifetime)
         {
-            if (factoryType == null) throw new ArgumentNullException(nameof(factoryType));
-            if (productType == null) throw new ArgumentNullException(nameof(productType));
+            if (delegateFactoryType == null) throw new ArgumentNullException(nameof(delegateFactoryType));
+            if (productInstanceType == null) throw new ArgumentNullException(nameof(productInstanceType));
             
-            ThrowIfCannotAdd(factoryType, "Cannot add factory");
-            
-            var descriptor = new FactoryDescriptor(factoryType, productType, lifetime);
-            _descriptors.Add(factoryType, descriptor);
-        }
+            ThrowIfCannotAddService(delegateFactoryType, "Cannot add the delegate factory");
 
-        public void AddDelegateFactory(Delegate delegateType, Type productType, ServiceLifetime lifetime)
-        {
-            throw new NotImplementedException();
+            var descriptor = new DelegateFactoryDescriptor(delegateFactoryType, productInstanceType, lifetime);
+            _serviceMap.Add(delegateFactoryType, descriptor);
         }
-
-        public void AddService(Type serviceType, Type instanceType, ServiceLifetime lifetime)
+        
+        public void AddService(Type serviceType, Type implementationType, ServiceLifetime lifetime)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
-            if (instanceType == null) throw new ArgumentNullException(nameof(instanceType));
+            if (implementationType == null) throw new ArgumentNullException(nameof(implementationType));
             
-            ThrowIfCannotAdd(serviceType, "Cannot add service");
-            
-            var descriptor = new ConstructableDescriptor(serviceType, instanceType, lifetime);
-            _descriptors.Add(serviceType, descriptor);
+            ThrowIfCannotAddService(serviceType, "Cannot add the service");
+
+            var descriptor = new ConstructableDescriptor(serviceType, implementationType, lifetime);
+            _serviceMap.Add(serviceType, descriptor);
         }
 
-        public void AddDynamicService(Type serviceType, bool isSingleton)
+        public DynamicServiceRegistration AddDynamicService(Type serviceType, bool isSingleton)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             
-            ThrowIfCannotAdd(serviceType, "Cannot add dynamic service");
-            
+            ThrowIfCannotAddService(serviceType, "Cannot add the dynamic service");
+
             var descriptor = new DynamicDescriptor(serviceType, isSingleton);
-            _descriptors.Add(serviceType, descriptor);
-        }
+            _serviceMap.Add(serviceType, descriptor);
 
-        public void BindMonoBehaviourToService(Type monoBehaviourType, Type serviceType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddMonoBehaviourInitialization(Type monoBehaviourType, string? initializingMethodName)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddDynamicComponent(Type serviceType, bool isSingleton, string? initializingMethodName)
-        {
-            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
-            
-            ThrowIfCannotAdd(serviceType, "Cannot add dynamic component");
-
-            var descriptor = new ComponentDescriptor(serviceType, isSingleton, initializingMethodName);
-            _descriptors.Add(serviceType, descriptor);
-        }
-
-        public IReadOnlyDictionary<Type, IServiceDescriptor> Bake()
-        {
-            if (_isBaked)
+            if (Utility.IsComponentType(serviceType))
             {
-                throw new InvalidOperationException("Cannot bake. Service Collection is already baked.");
+                BindServiceToComponent(descriptor, serviceType);
             }
             
+            var registration = new DynamicServiceRegistration(this, descriptor);
+            return registration;
+        }
+
+        public ComponentDescriptorRegistration BindServiceToComponent(
+            DynamicDescriptor dynamicDescriptor,
+            Type componentType)
+        {
+            if (dynamicDescriptor == null) throw new ArgumentNullException(nameof(dynamicDescriptor));
+            if (componentType == null) throw new ArgumentNullException(nameof(componentType));
+
+            if (_isBaked)
+            {
+                throw new ServiceBindingException(dynamicDescriptor.ServiceType, componentType, $"{nameof(ServiceCollection)} has already been baked.");
+            }
+            
+            dynamicDescriptor.BindComponent(componentType);
+            var componentDescriptor = GetComponentDescriptor(
+                componentType,
+                innerException => new ServiceBindingException(dynamicDescriptor.ServiceType, componentType, innerException));
+            componentDescriptor.BindService(dynamicDescriptor);
+            
+            var registration = new ComponentDescriptorRegistration(this, componentType);
+            return registration;
+        }
+
+        public void InitializeComponentWith(Type componentType, string methodName)
+        {
+            if (componentType == null) throw new ArgumentNullException(nameof(componentType));
+            if (methodName == null) throw new ArgumentNullException(nameof(methodName));
+            
+            if (_isBaked)
+            {
+                var message = $"\n{nameof(ServiceCollection)} has already been baked.";
+                throw new InvalidOperationException(GetExceptionMessage() + message);
+            }
+
+            var descriptor = GetComponentDescriptor(
+                componentType,
+                innerException => new InvalidOperationException(GetExceptionMessage(), innerException));
+            
+            descriptor.AddInitializer(methodName);
+            
+            string GetExceptionMessage()
+            {
+                return $"Cannot initialize the '{componentType.Name}' component with the '{methodName}' method.";
+            }
+        }
+        
+        public void Bake()
+        {
+            if (_isBaked) return;
+
+            // TODO: Check collection.
             _isBaked = true;
-            return _descriptors;
         }
 
-        private void ThrowIfCannotAdd(Type key, string message)
+        private void ThrowIfCannotAddService(Type serviceType, string message)
         {
             if (_isBaked)
             {
-                throw new InvalidOperationException(message + $" '{key.Name}'. Service Collection is already baked.");
+                throw new InvalidOperationException(message + $" '{serviceType.Name}'. Service Collection is already baked.");
             }
 
-            if (_descriptors.ContainsKey(key))
+            if (_serviceMap.ContainsKey(serviceType))
             {
-                throw new InvalidOperationException(message + $" '{key.Name}'. It is already registered.");
+                throw new InvalidOperationException(message + $" '{serviceType.Name}'. The service has already been added.");
+            }
+        }
+
+        private ComponentDescriptor GetComponentDescriptor(Type componentType, Func<Exception, Exception> getExceptionOnThrow)
+        {
+            if (_componentMap.TryGetValue(componentType, out var componentDescriptor)) return componentDescriptor;
+
+            try
+            {
+                componentDescriptor = new ComponentDescriptor(componentType);
+            }
+            catch (Exception e)
+            {
+                throw getExceptionOnThrow(e);
+            }
+            
+            _componentMap.Add(componentType, componentDescriptor);
+            return componentDescriptor;
+        }
+
+        private void ThrowIfNotBaked()
+        {
+            if (!_isBaked)
+            {
+                throw new InvalidOperationException($"{nameof(ServiceCollection)} has not been baked yet.");
             }
         }
     }

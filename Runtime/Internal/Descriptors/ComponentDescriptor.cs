@@ -1,54 +1,66 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
-using Object = UnityEngine.Object;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal class ComponentDescriptor : DynamicDescriptor
+    internal class ComponentDescriptor
     {
-        private readonly string? _initializingMethodName;
-        private Type? _implementationType;
-        
-        public MethodInfo? InitializingMethod { get; private set; }
+        private readonly Type _componentType;
+        private object? _binding;
+        public MethodInfo? Initializer { get; private set; }
 
-        public ComponentDescriptor(Type serviceType, bool isSingleton, string? initializingMethodName) 
-            : base(serviceType, isSingleton)
+        public ComponentDescriptor(Type componentType)
         {
-            _initializingMethodName = initializingMethodName;
-        }
-
-        public override object ResolveService(ContextualServiceProvider serviceProvider)
-        {
-            var component = Object.FindObjectOfType(ServiceType, true);
-            var componentType = component.GetType();
-            var initializingMethod = GetInitializingMethod(componentType);
-
-            if (initializingMethod is null)
-            {
-                return component;
-            }
+            if (componentType == null) throw new ArgumentNullException(nameof(componentType));
             
-            var parameters = serviceProvider.GetServices(initializingMethod.GetParameters());
-            initializingMethod.Invoke(component, parameters);
-            return component;
+            if (!Utility.IsComponentType(componentType))
+            {
+                throw new ArgumentException(
+                    $"Cannot create ComponentDescriptor. {componentType.FullName} is not derived from MonoBehaviour.",
+                    nameof(componentType));
+            }
+
+            _componentType = componentType;
         }
 
-        public MethodInfo? GetInitializingMethod(Type implementationType)
+        public void BindService(DynamicDescriptor serviceDescriptor)
         {
-            if (implementationType == _implementationType)
+            if (serviceDescriptor == null) throw new ArgumentNullException(nameof(serviceDescriptor));
+
+            switch (_binding)
             {
-                return InitializingMethod;
+                case null:
+                    _binding = serviceDescriptor;
+                    return;
+                case List<DynamicDescriptor> list:
+                    list.Add(serviceDescriptor);
+                    return;
+                case DynamicDescriptor value:
+                    _binding = new List<DynamicDescriptor> { value, serviceDescriptor };
+                    return;
+                default:
+                    throw new Exception("Unexpected behaviour");
+            }
+        }
+
+        public void AddInitializer(string methodName)
+        {
+            if (methodName == null) throw new ArgumentNullException(nameof(methodName));
+
+            if (Initializer is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot add the initializer with name '{methodName}' to the '{_componentType.FullName}' "
+                    + $"component. The initialize already exists with name '{Initializer.Name}'.");
             }
 
-            _implementationType = implementationType;
+            Initializer = _componentType.GetMethod(methodName);
 
-            if (string.IsNullOrEmpty(_initializingMethodName))
+            if (Initializer is null)
             {
-                return null;
+                throw new InvalidOperationException($"Cannot get the method '{methodName}' in {_componentType.FullName}.");
             }
-
-            InitializingMethod = implementationType.GetMethod(_initializingMethodName);
-            return InitializingMethod;
         }
     }
 }

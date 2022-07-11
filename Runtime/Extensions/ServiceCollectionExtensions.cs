@@ -43,75 +43,24 @@ namespace InjectReady.YouInject
             services.AddDelegateFactory(delegateType, productType, ServiceLifetime.Scoped);
         }
 
-        public static void AddDynamicSingleton<TService>(this IServiceCollection services)
+        public static DynamicServiceRegistration AddDynamicSingleton<TService>(this IServiceCollection services)
         {
             var serviceType = typeof(TService);
-            services.AddDynamicService(serviceType, true);
+            return services.AddDynamicService(serviceType, true);
         }
         
-        public static void AddDynamicScoped<TService>(this IServiceCollection services)
+        public static DynamicServiceRegistration AddDynamicScoped<TService>(this IServiceCollection services)
         {
             var serviceType = typeof(TService);
-            services.AddDynamicService(serviceType, false);
-        }
-
-        public static void AddScopeMonoBehaviour<TService, TMonoBehaviour>(
-            this IServiceCollection services,
-            string? initializingMethodName = null) where TMonoBehaviour : MonoBehaviour
-        {
-            AddMonoBehaviour<TService, TMonoBehaviour>(services, false, initializingMethodName);
+            return services.AddDynamicService(serviceType, false);
         }
         
-        public static void AddScopeMonoBehaviour<TMonoBehaviour>(
-            this IServiceCollection services,
-            string? initializingMethodName = null) where TMonoBehaviour : MonoBehaviour
-        {
-            AddMonoBehaviour<TMonoBehaviour, TMonoBehaviour>(services, false, initializingMethodName);
-        }
-        
-        public static void AddSingletonMonoBehaviour<TService, TMonoBehaviour>(
-            this IServiceCollection services,
-            string? initializingMethodName = null) where TMonoBehaviour : MonoBehaviour
-        {
-            AddMonoBehaviour<TService, TMonoBehaviour>(services, true, initializingMethodName);
-        }
-        
-        public static void AddSingletonMonoBehaviour<TMonoBehaviour>(
-            this IServiceCollection services,
-            string? initializingMethodName = null) where TMonoBehaviour : MonoBehaviour
-        {
-            AddMonoBehaviour<TMonoBehaviour, TMonoBehaviour>(services, true, initializingMethodName);
-        }
-
         public static void AddMonoBehaviourInitialization<T>(
             this IServiceCollection services,
             string initializingMethodName) where T : MonoBehaviour
         {
             var monoBehaviourType = typeof(T);
-            services.AddMonoBehaviourInitialization(monoBehaviourType, initializingMethodName);
-        }
-        
-        private static void AddMonoBehaviour<TService, TMonoBehaviour>(
-            this IServiceCollection services,
-            bool isSingleton,
-            string? initializingMethodName = null) where TMonoBehaviour : MonoBehaviour
-        {
-            var serviceType = typeof(TService);
-            var monoBehaviourType = typeof(TMonoBehaviour);
-
-            if (!serviceType.IsAssignableFrom(monoBehaviourType))
-            {
-                throw new InvalidOperationException(
-                    $"The '{serviceType.FullName}' service is not assignable from '{monoBehaviourType.FullName}' type");
-            }
-
-            services.AddDynamicService(serviceType, isSingleton);
-            services.BindMonoBehaviourToService(monoBehaviourType, serviceType);
-            
-            if (!string.IsNullOrEmpty(initializingMethodName))
-            {
-                services.AddMonoBehaviourInitialization(monoBehaviourType, initializingMethodName);
-            }
+            services.InitializeComponentWith(monoBehaviourType, initializingMethodName);
         }
         
         private static void AddService<TService, TInstance>(this IServiceCollection services, ServiceLifetime lifetime)

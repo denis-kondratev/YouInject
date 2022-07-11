@@ -7,7 +7,7 @@ namespace InjectReady.YouInject
         private class HostBuilder : IHostBuilder
         {
             private readonly ServiceCollection _services;
-            
+
             public HostBuilder()
             {
                 _services = new ServiceCollection();
@@ -18,8 +18,9 @@ namespace InjectReady.YouInject
             
             public IHost BuildHost()
             {
-                var serviceDescriptors = _services.Bake();
-                var host = new Internal.Host(serviceDescriptors);
+                _services.Bake();
+                var rootScope = new RootServiceScope(_services.ServiceMap, _services.ComponentMap);
+                var host = new Internal.Host(rootScope);
                 _instance = host;
                 return host;
             }

@@ -5,12 +5,16 @@ namespace InjectReady.YouInject.Internal
 {
     internal class RootServiceScope : ServiceScope, IServiceScopeFactory
     {
-        private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _descriptors;
-        
-        public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors) 
+        private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _serviceMap;
+        private readonly IReadOnlyDictionary<Type, ComponentDescriptor> _descriptorMap;
+
+        public RootServiceScope(
+            IReadOnlyDictionary<Type, IServiceDescriptor> serviceMap,
+            IReadOnlyDictionary<Type, ComponentDescriptor> descriptorMap) 
             : base(new Stack<ContextualServiceProvider>(), new CachingContainer())
         {
-            _descriptors = descriptors;
+            _serviceMap = serviceMap;
+            _descriptorMap = descriptorMap;
         }
 
         public override IServiceContainer GetContainer(ServiceLifetime lifetime)
@@ -45,7 +49,7 @@ namespace InjectReady.YouInject.Internal
 
         public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
         {
-            return _descriptors.TryGetValue(serviceType, out descriptor);
+            return _serviceMap.TryGetValue(serviceType, out descriptor);
         }
 
         public ServiceScope CreateScope(ThruContainer scopedContainer)

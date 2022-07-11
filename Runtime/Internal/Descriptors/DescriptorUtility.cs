@@ -9,7 +9,8 @@ namespace InjectReady.YouInject.Internal
 
         public static bool IsMonoBehavior(Type type)
         {
-            return MonoBehaviourType.IsAssignableFrom(type);
+            return type.IsAssignableFrom(MonoBehaviourType);
+            //return MonoBehaviourType.IsAssignableFrom(type);
         }
     }
 }

@@ -106,8 +106,6 @@ namespace InjectReady.YouInject.Internal
 
         private void OnAddingComponent(DynamicDescriptor descriptor, object service)
         {
-            if (descriptor is not ComponentDescriptor) return;
-            
             if (service is not MonoBehaviour component)
             {
                 throw new ArgumentException(
@@ -146,25 +144,8 @@ namespace InjectReady.YouInject.Internal
             if (service == null) throw new ArgumentNullException(nameof(service));
             
             ThrowIfDisposed();
-
-            if (GetDescriptor(serviceType) is not ComponentDescriptor descriptor)
-            {
-                throw new InvalidOperationException(
-                    $"Cannot initialize service of type '{serviceType.FullName}'. " +
-                    "It must be registered as Component.");
-            }
-
-            var implementationType = service.GetType();
-            var initializingMethod = descriptor.GetInitializingMethod(implementationType);
-
-            if (initializingMethod is null)
-            {
-                throw new InvalidOperationException(
-                    $"Cannot initialize service of type '{serviceType.FullName}'. " +
-                    "There is no registered initializing method.");
-            }
             
-            InitializeService(service, initializingMethod);
+            var implementationType = service.GetType();
         }
 
         public void InitializeService<T>(T service) where T : MonoBehaviour
