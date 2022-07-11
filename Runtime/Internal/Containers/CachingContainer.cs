@@ -2,8 +2,24 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
+    internal class ThruContainer : CachingContainer
+    {
+        private readonly CachingContainer _parentContainer;
+
+        public ThruContainer(CachingContainer parentContainer)
+        {
+            _parentContainer = parentContainer;
+        }
+
+        public override bool TryGetService(Type serviceType, out object service)
+        {
+            return base.TryGetService(serviceType, out service) 
+                   || _parentContainer.TryGetService(serviceType, out service);
+        }
+    }
+    
     internal class CachingContainer : ServiceContainer
     {
         private readonly Dictionary<Type, object> _services;
@@ -40,12 +56,12 @@ namespace YouInject.Internal
             
             ThrowIfDisposed();
             
-            if (_services.TryGetValue(descriptor.ServiceType, out var service))
+            if (TryGetService(descriptor.ServiceType, out var service))
             {
                 return service;
             }
             
-            service = CreateService(descriptor, serviceProvider);
+            service = descriptor.ResolveService(serviceProvider);
             _services.Add(descriptor.ServiceType, service);
             return service;
         }
@@ -60,13 +76,23 @@ namespace YouInject.Internal
             _services.Add(serviceType, service);
         }
 
-        public void RemoveService(IServiceDescriptor descriptor)
+        public void RemoveService(Type serviceType)
         {
-            if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
-            
+            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
+
             ThrowIfDisposed();
             
-            _services.Remove(descriptor.ServiceType);
+            _services.Remove(serviceType);
+        }
+
+        public bool Contains(Type serviceType)
+        {
+            return _services.ContainsKey(serviceType);
+        }
+
+        public virtual bool TryGetService(Type serviceType, out object service)
+        {
+            return _services.TryGetValue(serviceType, out service);
         }
     }
 }

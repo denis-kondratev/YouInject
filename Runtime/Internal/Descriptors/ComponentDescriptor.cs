@@ -1,47 +1,54 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
-using UnityEngine;
+using Object = UnityEngine.Object;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
-    internal class ComponentDescriptor : IServiceDescriptor
+    internal class ComponentDescriptor : DynamicDescriptor
     {
-        public ComponentDescriptor(Type serviceType, Type instanceType, string initializingMethodName)
-        {
-            ServiceType = serviceType ?? throw new ArgumentNullException(nameof(serviceType));
-            Lifetime = ServiceLifetime.Scoped;
-            Initializer = GetInitializer(instanceType, initializingMethodName);
-        }
+        private readonly string? _initializingMethodName;
+        private Type? _implementationType;
         
-        public Type ServiceType { get; }
+        public MethodInfo? InitializingMethod { get; private set; }
 
-        public ServiceLifetime Lifetime { get; }
-        
-        public Action<Component, ContextualServiceProvider> Initializer { get; }
-        
-        private static Action<Component, ContextualServiceProvider> GetInitializer(Type instanceType, string methodName)
+        public ComponentDescriptor(Type serviceType, bool isSingleton, string? initializingMethodName) 
+            : base(serviceType, isSingleton)
         {
-            var methodInfo = GetInitializingMethod(instanceType, methodName);
-            var parameterTypes = methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
-
-            return (instance, context) =>
-            {
-                var parameters = context.GetServices(parameterTypes);
-                methodInfo.Invoke(instance, parameters);
-            };
+            _initializingMethodName = initializingMethodName;
         }
-        
-        private static MethodInfo GetInitializingMethod(Type instanceType, string methodName)
+
+        public override object ResolveService(ContextualServiceProvider serviceProvider)
         {
-            var methodInfo = instanceType.GetMethod(methodName);
-            
-            if (methodInfo is null)
+            var component = Object.FindObjectOfType(ServiceType, true);
+            var componentType = component.GetType();
+            var initializingMethod = GetInitializingMethod(componentType);
+
+            if (initializingMethod is null)
             {
-                throw new ArgumentException($"Cannot find the '{methodName}' method in '{instanceType.Name}' type.");
+                return component;
             }
             
-            return methodInfo;
+            var parameters = serviceProvider.GetServices(initializingMethod.GetParameters());
+            initializingMethod.Invoke(component, parameters);
+            return component;
+        }
+
+        public MethodInfo? GetInitializingMethod(Type implementationType)
+        {
+            if (implementationType == _implementationType)
+            {
+                return InitializingMethod;
+            }
+
+            _implementationType = implementationType;
+
+            if (string.IsNullOrEmpty(_initializingMethodName))
+            {
+                return null;
+            }
+
+            InitializingMethod = implementationType.GetMethod(_initializingMethodName);
+            return InitializingMethod;
         }
     }
 }

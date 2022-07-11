@@ -1,16 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
-    internal class InheritedServiceScope : ServiceScope
+    internal class ThruServiceScope : ServiceScope
     {
         private readonly RootServiceScope _root;
-
-        public InheritedServiceScope(RootServiceScope root)
+        
+        public ThruServiceScope(
+            RootServiceScope root,
+            Stack<ContextualServiceProvider> contextPool,
+            ThruContainer scopedContainer)
+            : base(contextPool, scopedContainer)
         {
             _root = root;
         }
-        
+
         public override IServiceContainer GetContainer(ServiceLifetime lifetime)
         {
             ThrowIfDisposed();

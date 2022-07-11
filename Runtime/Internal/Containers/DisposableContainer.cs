@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class DisposableContainer : ServiceContainer
     {
@@ -40,8 +40,8 @@ namespace YouInject.Internal
             if (serviceProvider == null) throw new ArgumentNullException(nameof(serviceProvider));
 
             ThrowIfDisposed();
-            
-            var service = CreateService(descriptor, serviceProvider);
+
+            var service = descriptor.ResolveService(serviceProvider);
             CaptureDisposable(service);
             return service;
         }

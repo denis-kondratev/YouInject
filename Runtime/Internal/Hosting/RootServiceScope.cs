@@ -1,23 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class RootServiceScope : ServiceScope, IServiceScopeFactory
     {
         private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _descriptors;
         
-        public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
+        public RootServiceScope(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors) 
+            : base(new Stack<ContextualServiceProvider>(), new CachingContainer())
         {
             _descriptors = descriptors;
         }
 
-        public IServiceScope CreateScope()
-        {
-            var scope = new InheritedServiceScope(this);
-            return scope;
-        }
-        
         public override IServiceContainer GetContainer(ServiceLifetime lifetime)
         {
             ThrowIfDisposed();
@@ -32,7 +27,7 @@ namespace YouInject.Internal
 
             return container;
         }
-        
+
         public override IServiceDescriptor GetDescriptor(Type serviceType)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
@@ -41,7 +36,8 @@ namespace YouInject.Internal
             
             if (!TryGetDescriptor(serviceType, out var descriptor))
             {
-                throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
+                throw new ServiceRegistrationException(serviceType, "Service is not registered.");
+                //throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
             }
 
             return descriptor;
@@ -50,6 +46,12 @@ namespace YouInject.Internal
         public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
         {
             return _descriptors.TryGetValue(serviceType, out descriptor);
+        }
+
+        public ServiceScope CreateScope(ThruContainer scopedContainer)
+        {
+            var scope = new ThruServiceScope(this, ContextPool, scopedContainer);
+            return scope;
         }
     }
 }

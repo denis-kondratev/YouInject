@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Reflection;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal partial class FactoryDescriptor
     {

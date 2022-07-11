@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace YouInject
+namespace InjectReady.YouInject
 {
     public interface IServiceCollection
     {
         void AddFactory(Type factoryType, Type productType, ServiceLifetime lifetime);
-        void AddComponent(Type serviceType, Type instanceType, string initializingMethodName);
         void AddService(Type serviceType, Type instanceType, ServiceLifetime lifetime);
-        void AddDynamicService(Type serviceType, ServiceLifetime lifetime);
+        void AddDynamicService(Type serviceType, bool isSingleton);
+        void AddDynamicComponent(Type serviceType, bool isSingleton, string? initializingMethodName);
     }
 }

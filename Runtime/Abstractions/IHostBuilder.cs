@@ -1,4 +1,4 @@
-﻿namespace YouInject
+﻿namespace InjectReady.YouInject
 {
     public interface IHostBuilder
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace YouInject
+namespace InjectReady.YouInject
 {
     public static class ServiceProviderExtensions
     {
@@ -9,13 +9,6 @@ namespace YouInject
             var serviceType = typeof(T);
             var instance = services.GetService(serviceType);
             return (T)instance;
-        }
-        
-        public static IServiceScope CreateScope(this IServiceProvider services)
-        {
-            var scopeFactory = services.GetService<IServiceScopeFactory>();
-            var scope = scopeFactory.CreateScope();
-            return scope;
         }
     }
 }

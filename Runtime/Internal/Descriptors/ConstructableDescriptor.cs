@@ -1,10 +1,16 @@
 ﻿using System;
-using System.Linq;
+using System.Reflection;
+using UnityEngine;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
-    internal class ConstructableDescriptor : IConstructableDescriptor
+    internal class ConstructableDescriptor : IServiceDescriptor
     {
+        private readonly Func<ContextualServiceProvider, object> _serviceFactory;
+
+        public Type ServiceType { get; }
+        public ServiceLifetime Lifetime { get; }
+
         public ConstructableDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
@@ -17,41 +23,42 @@ namespace YouInject.Internal
                     nameof(implementationType));
             }
 
-            if (DescriptorUtility.IsComponent(serviceType))
+            if (DescriptorUtility.IsMonoBehavior(implementationType))
             {
                 throw new ArgumentException(
-                    $"The '{serviceType.Name}' service is derived from 'UnityEngine.Component' type.",
+                    $"Cannot register the constructable service '{serviceType.FullName}'. The implementation " +
+                    $"'{implementationType.FullName}' is derived from '{typeof(MonoBehaviour).FullName}', but it should not be.",
                     nameof(serviceType));
             }
             
             ServiceType = serviceType;
             Lifetime = lifetime;
-            ServiceFactory = GetFactory(implementationType);
+            _serviceFactory = GetFactory(implementationType);
         }
-
-        public Type ServiceType { get; }
-
-        public ServiceLifetime Lifetime { get; }
-
-        public Func<ContextualServiceProvider, object> ServiceFactory { get; }
+        
+        public object ResolveService(ContextualServiceProvider serviceProvider)
+        {
+            var service = _serviceFactory.Invoke(serviceProvider);
+            return service;
+        }
 
         private static Func<ContextualServiceProvider, object> GetFactory(Type instanceType)
         {
             var parameterTypes = GetParameterTypes(instanceType);
 
-            return context =>
+            return serviceProvider =>
             {
-                var parameters = context.GetServices(parameterTypes);
+                var parameters = serviceProvider.GetServices(parameterTypes);
                 var instance = Activator.CreateInstance(instanceType, parameters);
                 return instance;
             };
         }
         
-        private static Type[] GetParameterTypes(Type instanceType)
+        private static ParameterInfo[] GetParameterTypes(Type instanceType)
         {
             var constructors = instanceType.GetConstructors();
 
-            if (constructors.Length == 0) return Array.Empty<Type>();
+            if (constructors.Length == 0) return Array.Empty<ParameterInfo>();
 
             var parameters = constructors[0].GetParameters();
             
@@ -65,8 +72,7 @@ namespace YouInject.Internal
                 }
             }
 
-            var result = parameters.Select(parameter => parameter.ParameterType).ToArray();
-            return result;
+            return parameters;
         }
     }
 }

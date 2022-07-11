@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace YouInject.Internal
+namespace InjectReady.YouInject.Internal
 {
     internal class ServiceCollection : IServiceCollection
     {
@@ -23,17 +23,6 @@ namespace YouInject.Internal
             var descriptor = new FactoryDescriptor(factoryType, productType, lifetime);
             _descriptors.Add(factoryType, descriptor);
         }
-        
-        public void AddComponent(Type serviceType, Type instanceType, string initializingMethodName)
-        {
-            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
-            if (instanceType == null) throw new ArgumentNullException(nameof(instanceType));
-            
-            ThrowIfCannotAdd(serviceType, "Cannot add component");
-            
-            var descriptor = new ComponentDescriptor(serviceType, instanceType, initializingMethodName);
-            _descriptors.Add(serviceType, descriptor);
-        }
 
         public void AddService(Type serviceType, Type instanceType, ServiceLifetime lifetime)
         {
@@ -46,19 +35,23 @@ namespace YouInject.Internal
             _descriptors.Add(serviceType, descriptor);
         }
 
-        public void AddDynamicService(Type serviceType, ServiceLifetime lifetime)
+        public void AddDynamicService(Type serviceType, bool isSingleton)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
-
-            if (lifetime is not (ServiceLifetime.Scoped or ServiceLifetime.Singleton))
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(lifetime),
-                    $"Dynamic service can be only {nameof(ServiceLifetime.Scoped)} or {nameof(ServiceLifetime.Singleton)}.");
-            }
             
             ThrowIfCannotAdd(serviceType, "Cannot add dynamic service");
-            var descriptor = new DynamicDescriptor(serviceType, lifetime);
+            
+            var descriptor = new DynamicDescriptor(serviceType, isSingleton);
+            _descriptors.Add(serviceType, descriptor);
+        }
+
+        public void AddDynamicComponent(Type serviceType, bool isSingleton, string? initializingMethodName)
+        {
+            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
+            
+            ThrowIfCannotAdd(serviceType, "Cannot add dynamic component");
+
+            var descriptor = new ComponentDescriptor(serviceType, isSingleton, initializingMethodName);
             _descriptors.Add(serviceType, descriptor);
         }
 
