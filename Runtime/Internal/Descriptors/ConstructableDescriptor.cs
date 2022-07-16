@@ -6,7 +6,7 @@ namespace InjectReady.YouInject.Internal
 {
     internal class ConstructableDescriptor : IServiceDescriptor
     {
-        private readonly Func<ContextualServiceProvider, object> _serviceFactory;
+        private readonly Func<Func<Type, object>, object> _serviceFactory;
 
         public Type ServiceType { get; }
         public ServiceLifetime Lifetime { get; }
@@ -35,16 +35,16 @@ namespace InjectReady.YouInject.Internal
             Lifetime = lifetime;
             _serviceFactory = GetFactory(implementationType);
         }
-        
-        public object ResolveService(ContextualServiceProvider serviceProvider)
+
+        public object ResolveService(Func<Type, object> serviceProvider)
         {
             var service = _serviceFactory.Invoke(serviceProvider);
             return service;
         }
 
-        private static Func<ContextualServiceProvider, object> GetFactory(Type instanceType)
+        private static Func<Func<Type, object>, object> GetFactory(Type instanceType)
         {
-            var parameterTypes = GetParameterTypes(instanceType);
+            var parameterTypes = GetParameterInfos(instanceType);
 
             return serviceProvider =>
             {
@@ -54,7 +54,7 @@ namespace InjectReady.YouInject.Internal
             };
         }
         
-        private static ParameterInfo[] GetParameterTypes(Type instanceType)
+        private static ParameterInfo[] GetParameterInfos(Type instanceType)
         {
             var constructors = instanceType.GetConstructors();
 

@@ -6,6 +6,6 @@ namespace InjectReady.YouInject.Internal
     {
         Type ServiceType { get; }
         ServiceLifetime Lifetime { get; }
-        object ResolveService(ContextualServiceProvider serviceProvider);
+        object ResolveService(Func<Type, object> serviceProvider);
     }
 }

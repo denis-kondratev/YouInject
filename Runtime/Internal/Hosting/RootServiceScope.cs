@@ -1,61 +1,76 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal class RootServiceScope : ServiceScope, IServiceScopeFactory
+    internal class RootServiceScope : IServiceScope, IExtendedServiceProvider, IServiceScopeFactory
     {
         private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _serviceMap;
         private readonly IReadOnlyDictionary<Type, ComponentDescriptor> _descriptorMap;
+        private readonly ScopeContext _scopeContext;
+        private bool _isDisposed;
 
+        public IExtendedServiceProvider ServiceProvider => this;
+        
         public RootServiceScope(
             IReadOnlyDictionary<Type, IServiceDescriptor> serviceMap,
-            IReadOnlyDictionary<Type, ComponentDescriptor> descriptorMap) 
-            : base(new Stack<ContextualServiceProvider>(), new CachingContainer())
+            IReadOnlyDictionary<Type, ComponentDescriptor> descriptorMap)
         {
             _serviceMap = serviceMap;
             _descriptorMap = descriptorMap;
+            _scopeContext = new ScopeContext(GetService);
         }
 
-        public override IServiceContainer GetContainer(ServiceLifetime lifetime)
+        public async ValueTask DisposeAsync()
         {
-            ThrowIfDisposed();
-            
-            IServiceContainer container = lifetime switch
-            {
-                ServiceLifetime.Transient => TransientContainer,
-                ServiceLifetime.Scoped => ScopedContainer,
-                ServiceLifetime.Singleton => ScopedContainer,
-                _ => throw new ArgumentOutOfRangeException(nameof(lifetime), lifetime, null)
-            };
+            if (_isDisposed) return;
 
-            return container;
+            _isDisposed = true;
+            await _scopeContext.DisposeAsync();
         }
 
-        public override IServiceDescriptor GetDescriptor(Type serviceType)
+        public IServiceScope CreateScope()
         {
-            if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
-            
-            ThrowIfDisposed();
-            
-            if (!TryGetDescriptor(serviceType, out var descriptor))
+            throw new NotImplementedException();
+        }
+        
+        public object GetService(Type serviceType)
+        {
+            return GetService(serviceType, _scopeContext);
+        }
+
+        public void AddDynamicService(Type serviceType, object instance)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveComponent(MonoBehaviour instance)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void InitializeComponent(MonoBehaviour instance)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddComponent(MonoBehaviour instance)
+        {
+            throw new NotImplementedException();
+        }
+
+        private object GetService(Type serviceType, ScopeContext scopeContext)
+        {
+            if (!_serviceMap.TryGetValue(serviceType, out var descriptor))
             {
-                throw new ServiceRegistrationException(serviceType, "Service is not registered.");
-                //throw new InvalidOperationException($"Service '{serviceType}' is not registered.");
+                throw new ServiceResolvingException(serviceType, "The service is not registered");
             }
 
-            return descriptor;
-        }
-
-        public override bool TryGetDescriptor(Type serviceType, out IServiceDescriptor descriptor)
-        {
-            return _serviceMap.TryGetValue(serviceType, out descriptor);
-        }
-
-        public ServiceScope CreateScope(ThruContainer scopedContainer)
-        {
-            var scope = new ThruServiceScope(this, ContextPool, scopedContainer);
-            return scope;
+            var context = descriptor.Lifetime == ServiceLifetime.Singleton ? _scopeContext : scopeContext;
+            var service = context.GetService(descriptor);
+            return service;
         }
     }
 }
