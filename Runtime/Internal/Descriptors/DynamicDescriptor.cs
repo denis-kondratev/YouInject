@@ -17,7 +17,7 @@ namespace InjectReady.YouInject.Internal
 
         public object ResolveService(Func<Type, object> serviceProvider)
         {
-            throw new ServiceResolvingException(ServiceType, "The service has not been yet added.");
+            throw new ServiceIsNotRegisteredException(ServiceType, "The service has not been yet added.");
         }
 
         public void BindComponent(Type componentType)

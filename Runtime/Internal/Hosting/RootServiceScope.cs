@@ -9,7 +9,7 @@ namespace InjectReady.YouInject.Internal
     {
         private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _serviceMap;
         private readonly IReadOnlyDictionary<Type, ComponentDescriptor> _descriptorMap;
-        private readonly ScopeContext _scopeContext;
+        private readonly ScopeContext _rootContext;
         private bool _isDisposed;
 
         public IExtendedServiceProvider ServiceProvider => this;
@@ -20,7 +20,7 @@ namespace InjectReady.YouInject.Internal
         {
             _serviceMap = serviceMap;
             _descriptorMap = descriptorMap;
-            _scopeContext = new ScopeContext(GetService);
+            _rootContext = new ScopeContext(GetService);
         }
 
         public async ValueTask DisposeAsync()
@@ -28,7 +28,7 @@ namespace InjectReady.YouInject.Internal
             if (_isDisposed) return;
 
             _isDisposed = true;
-            await _scopeContext.DisposeAsync();
+            await _rootContext.DisposeAsync();
         }
 
         public IServiceScope CreateScope()
@@ -38,12 +38,12 @@ namespace InjectReady.YouInject.Internal
         
         public object GetService(Type serviceType)
         {
-            return GetService(serviceType, _scopeContext);
+            return GetService(serviceType, _rootContext);
         }
 
         public void AddDynamicService(Type serviceType, object instance)
         {
-            throw new NotImplementedException();
+            AddDynamicService(serviceType, instance, _rootContext);
         }
 
         public void RemoveComponent(MonoBehaviour instance)
@@ -61,16 +61,53 @@ namespace InjectReady.YouInject.Internal
             throw new NotImplementedException();
         }
 
-        private object GetService(Type serviceType, ScopeContext scopeContext)
+        private object GetService(Type serviceType, ScopeContext callSiteContext)
         {
             if (!_serviceMap.TryGetValue(serviceType, out var descriptor))
             {
-                throw new ServiceResolvingException(serviceType, "The service is not registered");
+                throw new ServiceIsNotRegisteredException(serviceType, "Cannot resolve the service.");
             }
 
-            var context = descriptor.Lifetime == ServiceLifetime.Singleton ? _scopeContext : scopeContext;
+            var context = descriptor.Lifetime == ServiceLifetime.Singleton ? _rootContext : callSiteContext;
             var service = context.GetService(descriptor);
             return service;
+        }
+        
+        private void AddDynamicService(Type serviceType, object instance, ScopeContext callSiteContext)
+        {
+            if (!_serviceMap.TryGetValue(serviceType, out var descriptor))
+            {
+                throw new ServiceIsNotRegisteredException(serviceType, "Cannot add the dynamic service.");
+            }
+
+            if (descriptor is not DynamicDescriptor dynamicDescriptor)
+            {
+                throw new InvalidOperationWithServiceException(
+                    serviceType,
+                    "Cannot add the service. It is not registered as dynamic.");
+            }
+            
+            if (dynamicDescriptor.Binding is not null
+                && dynamicDescriptor.Binding != instance.GetType())
+            {
+                throw new InvalidOperationWithServiceException(
+                    serviceType,
+                    $"Cannot add the service with the instance of '{instance.GetType().Name}'. "
+                    + $"The service is bound to '{dynamicDescriptor.Binding.Name}' type.");
+            }
+
+            var context = descriptor.Lifetime == ServiceLifetime.Singleton ? _rootContext : callSiteContext;
+            context.AddService(instance, descriptor);
+        }
+
+        private IServiceDescriptor GetDescriptor(Type serviceType)
+        {
+            if (_serviceMap.TryGetValue(serviceType, out var descriptor))
+            {
+                return descriptor;
+            }
+            
+            throw new ServiceIsNotRegisteredException(serviceType, "The service is not registered");
         }
     }
 }

@@ -45,11 +45,11 @@ namespace InjectReady.YouInject.Internal
             }
 
             service = descriptor.ResolveService(_serviceProvider);
-            OnServiceResolved(service, descriptor);
+            AddService(service, descriptor);
             return service;
         }
-
-        private void OnServiceResolved(object service, IServiceDescriptor descriptor)
+        
+        public void AddService(object service, IServiceDescriptor descriptor)
         {
             if (service is IDisposable or IAsyncDisposable)
             {
