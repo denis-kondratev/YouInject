@@ -6,14 +6,12 @@ namespace InjectReady.YouInject.Internal
 {
     internal class ScopeContext : IAsyncDisposable
     {
-        private readonly Func<Type, object> _serviceProvider;
         private readonly List<object> _disposables;
         private readonly Dictionary<Type, object> _cachedServices;
         private bool _isDisposed;
 
-        public ScopeContext(Func<Type, ScopeContext, object> serviceProvider)
+        internal ScopeContext()
         {
-            _serviceProvider = type => serviceProvider.Invoke(type, this);
             _cachedServices = new Dictionary<Type, object>();
             _disposables = new List<object>();
         }
@@ -23,6 +21,7 @@ namespace InjectReady.YouInject.Internal
             if (_isDisposed) return;
 
             _isDisposed = true;
+            
             foreach (var service in _disposables)
             {
                 if (service is IAsyncDisposable asyncDisposable)
@@ -35,30 +34,38 @@ namespace InjectReady.YouInject.Internal
                 }
             }
         }
-
-        public object GetService(IServiceDescriptor descriptor)
+        
+        internal bool TryGetCachedService(Type serviceType, out object service)
         {
-            if (descriptor.Lifetime != ServiceLifetime.Transient
-                && _cachedServices.TryGetValue(descriptor.ServiceType, out var service))
-            {
-                return service;
-            }
+            ThrowIfDisposed();
 
-            service = descriptor.ResolveService(_serviceProvider);
-            AddService(service, descriptor);
-            return service;
+            return _cachedServices.TryGetValue(serviceType, out service);
         }
         
-        public void AddService(object service, IServiceDescriptor descriptor)
+        internal void CaptureService(object service, Type? serviceTypeToCache = null)
         {
+            ThrowIfDisposed();
+            
             if (service is IDisposable or IAsyncDisposable)
             {
                 _disposables.Add(service);
             }
 
-            if (descriptor.Lifetime != ServiceLifetime.Transient)
+            if (serviceTypeToCache is null) return;
+            
+            if (!_cachedServices.TryAdd(serviceTypeToCache, service))
             {
-                _cachedServices.Add(descriptor.ServiceType, service);
+                throw new InvalidServiceOperationException(
+                    serviceTypeToCache,
+                    "Cannot cache the service. Another instance has already been cached.");
+            }
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(ServiceProvider));
             }
         }
     }

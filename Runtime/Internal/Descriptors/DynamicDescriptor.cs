@@ -15,7 +15,7 @@ namespace InjectReady.YouInject.Internal
             Lifetime = isSingleton ? ServiceLifetime.Singleton : ServiceLifetime.Scoped;
         }
 
-        public object ResolveService(Func<Type, object> serviceProvider)
+        public object ResolveService(ServiceProvider serviceProvider, ScopeContext scopeContext)
         {
             throw new ServiceIsNotRegisteredException(ServiceType, "The service has not been yet added.");
         }
@@ -29,7 +29,7 @@ namespace InjectReady.YouInject.Internal
                 throw new ServiceBindingException(
                     ServiceType,
                     componentType,
-                    $"{componentType.FullName} is not derived from MonoBehaviour.");
+                    "The component is not derived from MonoBehaviour.");
             }
 
             if (Binding is not null)
@@ -37,7 +37,7 @@ namespace InjectReady.YouInject.Internal
                 throw new ServiceBindingException(
                     ServiceType,
                     componentType,
-                    $"The service has already bound to '{Binding.FullName}'");
+                    $"The service has already bound to '{Binding.FullName}'.");
             }
 
             Binding = componentType;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace InjectReady.YouInject.Internal
@@ -61,6 +62,18 @@ namespace InjectReady.YouInject.Internal
             {
                 throw new InvalidOperationException($"Cannot get the method '{methodName}' in {_componentType.FullName}.");
             }
+        }
+
+        public bool TryGetSingleBinding([MaybeNullWhen(false)]out IServiceDescriptor serviceDescriptor)
+        {
+            if (_binding is IServiceDescriptor descriptor)
+            {
+                serviceDescriptor = descriptor;
+                return true;
+            }
+
+            serviceDescriptor = null;
+            return false;
         }
     }
 }

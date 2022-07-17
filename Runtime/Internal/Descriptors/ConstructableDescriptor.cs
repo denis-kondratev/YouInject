@@ -6,12 +6,12 @@ namespace InjectReady.YouInject.Internal
 {
     internal class ConstructableDescriptor : IServiceDescriptor
     {
-        private readonly Func<Func<Type, object>, object> _serviceFactory;
+        private readonly Func<ServiceProvider, ScopeContext, object> _serviceFactory;
 
         public Type ServiceType { get; }
         public ServiceLifetime Lifetime { get; }
 
-        public ConstructableDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
+        internal ConstructableDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             if (implementationType == null) throw new ArgumentNullException(nameof(implementationType));
@@ -23,7 +23,7 @@ namespace InjectReady.YouInject.Internal
                     nameof(implementationType));
             }
 
-            if (DescriptorUtility.IsMonoBehavior(implementationType))
+            if (Utility.IsComponentType(implementationType))
             {
                 throw new ArgumentException(
                     $"Cannot register the constructable service '{serviceType.FullName}'. The implementation " +
@@ -36,20 +36,21 @@ namespace InjectReady.YouInject.Internal
             _serviceFactory = GetFactory(implementationType);
         }
 
-        public object ResolveService(Func<Type, object> serviceProvider)
+        public object ResolveService(ServiceProvider serviceProvider, ScopeContext scopeContext)
         {
-            var service = _serviceFactory.Invoke(serviceProvider);
+            var service = _serviceFactory.Invoke(serviceProvider, scopeContext);
             return service;
         }
 
-        private static Func<Func<Type, object>, object> GetFactory(Type instanceType)
+        private static Func<ServiceProvider, ScopeContext, object> GetFactory(Type implementationType)
         {
-            var parameterTypes = GetParameterInfos(instanceType);
+            var parameterTypes = GetParameterInfos(implementationType);
 
-            return serviceProvider =>
+            return (provider, context) =>
             {
-                var parameters = serviceProvider.GetServices(parameterTypes);
-                var instance = Activator.CreateInstance(instanceType, parameters);
+                var parameters = new object[parameterTypes.Length];
+                provider.GetServices(context, parameterTypes, parameters);
+                var instance = Activator.CreateInstance(implementationType, parameters);
                 return instance;
             };
         }

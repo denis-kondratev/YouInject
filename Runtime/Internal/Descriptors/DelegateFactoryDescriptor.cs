@@ -5,7 +5,7 @@ namespace InjectReady.YouInject.Internal
     internal partial class DelegateFactoryDescriptor : IServiceDescriptor
     {
         private readonly Type _productInstanceType;
-        private readonly Func<Func<Type, object>, object> _instanceFactory;
+        private readonly Func<ServiceProvider, ScopeContext, object> _instanceFactory;
         
         public Type ServiceType { get; }
         public ServiceLifetime Lifetime { get; }
@@ -23,19 +23,19 @@ namespace InjectReady.YouInject.Internal
             _instanceFactory = GetInstanceFactory();
         }
 
-        public object ResolveService(Func<Type, object> serviceProvider)
+        public object ResolveService(ServiceProvider serviceProvider, ScopeContext scopeContext)
         {
-            var service = _instanceFactory.Invoke(serviceProvider);
+            var service = _instanceFactory.Invoke(serviceProvider, scopeContext);
             return service;
         }
 
-        private Func<Func<Type, object>, object> GetInstanceFactory()
+        private Func<ServiceProvider, ScopeContext, object> GetInstanceFactory()
         {
             var factoryBuilder = new FactoryBuilder(this);
             
-            return serviceProvider =>
+            return (provider, context) =>
             {
-                var factoryDelegate = factoryBuilder.GetFactoryDelegate(serviceProvider);
+                var factoryDelegate = factoryBuilder.CreateFactoryDelegate(provider, context);
                 return factoryDelegate;
             };
         }

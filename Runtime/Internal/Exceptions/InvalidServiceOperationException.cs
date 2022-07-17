@@ -3,9 +3,9 @@
 namespace InjectReady.YouInject.Internal
 {
     [Serializable]
-    internal class InvalidOperationWithServiceException : Exception
+    internal class InvalidServiceOperationException : Exception
     {
-        public InvalidOperationWithServiceException(Type serviceType, string message) 
+        public InvalidServiceOperationException(Type serviceType, string message) 
             : base($"Invalid operation with the '{serviceType.Name}' service.\n" + message)
         {
         }

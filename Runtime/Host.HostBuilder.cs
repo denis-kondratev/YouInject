@@ -19,8 +19,8 @@ namespace InjectReady.YouInject
             public IHost BuildHost()
             {
                 _services.Bake();
-                var rootScope = new RootServiceScope(_services.ServiceMap, _services.ComponentMap);
-                var host = new Internal.Host(rootScope);
+                var serviceProvider = new ServiceProvider(_services.ServiceMap, _services.ComponentMap);
+                var host = new Internal.Host(serviceProvider);
                 _instance = host;
                 return host;
             }

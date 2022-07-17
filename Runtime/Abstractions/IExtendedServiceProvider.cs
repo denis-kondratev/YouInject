@@ -6,8 +6,7 @@ namespace InjectReady.YouInject
     public interface IExtendedServiceProvider : IServiceProvider
     {
         void AddDynamicService(Type serviceType, object instance);
-        void RemoveComponent(MonoBehaviour instance);
         void InitializeComponent(MonoBehaviour instance);
-        void AddComponent(MonoBehaviour instance);
+        void StockpileComponent(MonoBehaviour component);
     }
 }

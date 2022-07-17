@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Reflection;
+using InjectReady.YouInject.Internal;
 
 namespace InjectReady.YouInject
 {
@@ -22,6 +24,28 @@ namespace InjectReady.YouInject
             var scopeFactory = services.GetService<IServiceScopeFactory>();
             var scope = scopeFactory.CreateScope();
             return scope;
+        }
+
+        internal static void GetServices(this ServiceProvider provider, ScopeContext context, Type[] serviceTypes, object[] services)
+        {
+            GetServices(provider, context, serviceTypes, t => t, services);
+        }
+        
+        internal static void GetServices(this ServiceProvider provider, ScopeContext context, ParameterInfo[] serviceInfos, object[] services)
+        {
+            GetServices(provider, context, serviceInfos, i => i.ParameterType, services);
+        }
+
+        private static void GetServices<T>(this ServiceProvider provider,
+            ScopeContext context,
+            T[] typeProviders,
+            Func<T, Type> getType,
+            object[] services)
+        {
+            for (var i = 0; i < services.Length; i++)
+            {
+                services[i] = provider.GetService(getType(typeProviders[i]), context);
+            }
         }
     }
 }

@@ -26,16 +26,17 @@ namespace InjectReady.YouInject.Internal
                 _factoryMethodInfo = GetFactoryMethodInfo(factoryDelegate.ReturnType, delegateParameterTypes);
             }
 
-            public object GetFactoryDelegate(Func<Type, object> serviceProvider)
+            public object CreateFactoryDelegate(ServiceProvider serviceProvider, ScopeContext scopeContext)
             {
-                var factory = BuildFactory(serviceProvider);
+                var factory = BuildFactory(serviceProvider, scopeContext);
                 var factoryDelegate = Delegate.CreateDelegate(_descriptor.ServiceType, factory, _factoryMethodInfo, true);
                 return factoryDelegate!;
             }
             
-            private GenericFactory BuildFactory(Func<Type, object> serviceProvider)
+            private GenericFactory BuildFactory(ServiceProvider serviceProvider, ScopeContext scopeContext)
             {
-                var steadyParameters = serviceProvider.GetServices(_steadyParameterTypes);
+                var steadyParameters = new object[_steadyParameterTypes.Length];
+                serviceProvider.GetServices(scopeContext, _steadyParameterTypes, steadyParameters);
                 var factory = new GenericFactory(_descriptor._productInstanceType, steadyParameters, _totalParameterCount);
                 return factory;
             }
