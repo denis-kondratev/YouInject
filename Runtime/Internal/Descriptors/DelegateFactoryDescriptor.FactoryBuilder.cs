@@ -8,19 +8,29 @@ namespace InjectReady.YouInject.Internal
     {
         private class FactoryBuilder
         {
-            private readonly DelegateFactoryDescriptor _descriptor;
+            private readonly Type _delegateType;
+            private readonly Type _productType;
             private readonly Type[] _steadyParameterTypes;
             private readonly int _totalParameterCount;
             private readonly MethodInfo _factoryMethodInfo;
             
-            public FactoryBuilder(DelegateFactoryDescriptor descriptor)
+            internal FactoryBuilder(Type delegateType, Type productType)
             {
-                _descriptor = descriptor ?? throw new ArgumentNullException(nameof(descriptor));
-                var factoryDelegate = descriptor.ServiceType.GetMethod("Invoke")!;
-                var delegateParameters = factoryDelegate.GetParameters();
+                _delegateType = delegateType;
+                _productType = productType;
+                var factoryDelegate = delegateType.GetMethod("Invoke")!;
 
-                _steadyParameterTypes = GetSteadyParameterTypes(delegateParameters, descriptor._productInstanceType) 
-                                        ?? ThrowCannotFindSuitableConstructor(descriptor.ServiceType, descriptor._productInstanceType);
+                if (productType.IsAssignableFrom(factoryDelegate.ReturnType))
+                {
+                    throw new DelegateFactoryRegistrationException(
+                        delegateType,
+                        $"The specified product type '{productType.Name}' of the factory is not assignable "
+                        + $"from the returned type '{factoryDelegate.ReturnType.Name}' of specified delegate.");
+                }
+                
+                var delegateParameters = factoryDelegate.GetParameters();
+                _steadyParameterTypes = GetSteadyParameterTypes(delegateParameters, productType)
+                                        ?? ThrowCannotFindSuitableConstructor(delegateType, productType);
                 _totalParameterCount = delegateParameters.Length + _steadyParameterTypes.Length;
                 var delegateParameterTypes = delegateParameters.Select(p => p.ParameterType).ToArray();
                 _factoryMethodInfo = GetFactoryMethodInfo(factoryDelegate.ReturnType, delegateParameterTypes);
@@ -29,7 +39,7 @@ namespace InjectReady.YouInject.Internal
             public object CreateFactoryDelegate(ServiceProvider serviceProvider, ScopeContext scopeContext)
             {
                 var factory = BuildFactory(serviceProvider, scopeContext);
-                var factoryDelegate = Delegate.CreateDelegate(_descriptor.ServiceType, factory, _factoryMethodInfo, true);
+                var factoryDelegate = Delegate.CreateDelegate(_delegateType, factory, _factoryMethodInfo, true);
                 return factoryDelegate!;
             }
             
@@ -37,7 +47,7 @@ namespace InjectReady.YouInject.Internal
             {
                 var steadyParameters = new object[_steadyParameterTypes.Length];
                 serviceProvider.GetServices(scopeContext, _steadyParameterTypes, steadyParameters);
-                var factory = new GenericFactory(_descriptor._productInstanceType, steadyParameters, _totalParameterCount);
+                var factory = new GenericFactory(_productType, steadyParameters, _totalParameterCount);
                 return factory;
             }
 
@@ -112,10 +122,12 @@ namespace InjectReady.YouInject.Internal
                 return methodInfo;
             }
 
-            private static Type[] ThrowCannotFindSuitableConstructor(Type factoryType, Type productType)
+            private static Type[] ThrowCannotFindSuitableConstructor(Type delegateType, Type productType)
             {
-                throw new ArgumentException($"Cannot find the suitable constructor of the '{productType.Name}'" +
-                                            $" type for the '{factoryType.Name}' factory.");
+                throw new DelegateFactoryRegistrationException(
+                    delegateType,
+                    $"Cannot find the suitable constructor for the specified '{productType.Name}' "
+                    + "product type of the factory.");
             }
         }
     }

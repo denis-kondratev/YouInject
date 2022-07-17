@@ -4,23 +4,24 @@ namespace InjectReady.YouInject.Internal
 {
     internal partial class DelegateFactoryDescriptor : IServiceDescriptor
     {
-        private readonly Type _productInstanceType;
+        private readonly Type _productType;
+        private readonly Type _delegateType;
         private readonly Func<ServiceProvider, ScopeContext, object> _instanceFactory;
-        
-        public Type ServiceType { get; }
+
+        public Type ServiceType => _delegateType;
         public ServiceLifetime Lifetime { get; }
 
-        internal DelegateFactoryDescriptor(Type delegateType, Type productInstanceType, ServiceLifetime lifetime)
+        internal DelegateFactoryDescriptor(Type delegateType, Type productType, ServiceLifetime lifetime)
         {
             if (delegateType.BaseType != typeof(MulticastDelegate))
             {
-                throw new ArgumentException($"The '{delegateType.Name}' type is not a delegate.", nameof(delegateType));
+                throw new DelegateFactoryRegistrationException(delegateType, "The specified type is not a delegate.");
             }
 
-            _productInstanceType = productInstanceType;
-            ServiceType = delegateType;
+            _productType = productType;
+            _delegateType = delegateType;
             Lifetime = lifetime;
-            _instanceFactory = GetInstanceFactory();
+            _instanceFactory = CreateFactory();
         }
 
         public object ResolveService(ServiceProvider serviceProvider, ScopeContext scopeContext)
@@ -29,9 +30,9 @@ namespace InjectReady.YouInject.Internal
             return service;
         }
 
-        private Func<ServiceProvider, ScopeContext, object> GetInstanceFactory()
+        private Func<ServiceProvider, ScopeContext, object> CreateFactory()
         {
-            var factoryBuilder = new FactoryBuilder(this);
+            var factoryBuilder = new FactoryBuilder(_delegateType, _productType);
             
             return (provider, context) =>
             {

@@ -1,4 +1,5 @@
-﻿using InjectReady.YouInject.Internal;
+﻿using System;
+using InjectReady.YouInject.Internal;
 
 namespace InjectReady.YouInject
 {
@@ -8,14 +9,20 @@ namespace InjectReady.YouInject
         {
             private readonly ServiceCollection _services;
 
-            public HostBuilder()
+            internal HostBuilder()
             {
                 _services = new ServiceCollection();
                 AddBuiltInServices();
             }
 
-            public IServiceCollection Services => _services;
-            
+            public IHostBuilder ConfigureServices(Action<IServiceCollection> configureServices)
+            {
+                if (configureServices == null) throw new ArgumentNullException(nameof(configureServices));
+                
+                configureServices.Invoke(_services);
+                return this;
+            }
+
             public IHost BuildHost()
             {
                 _services.Bake();
