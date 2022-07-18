@@ -6,7 +6,7 @@ namespace InjectReady.YouInject.Internal
     internal class ServiceCollection : IServiceCollection
     {
         private readonly Dictionary<Type, IServiceDescriptor> _serviceMap;
-        private readonly Dictionary<Type, ComponentDescriptor> _componentMap;
+        private readonly Dictionary<Type, ComponentDescriptor> _componentDescriptors;
         private bool _isBaked;
 
         public Dictionary<Type, IServiceDescriptor> ServiceMap
@@ -18,19 +18,19 @@ namespace InjectReady.YouInject.Internal
             }
         }
         
-        public Dictionary<Type, ComponentDescriptor> ComponentMap
+        public Dictionary<Type, ComponentDescriptor> ComponentDescriptors
         {
             get
             {
                 ThrowIfNotBaked();
-                return _componentMap;
+                return _componentDescriptors;
             }
         }
 
         internal ServiceCollection()
         {
             _serviceMap = new Dictionary<Type, IServiceDescriptor>();
-            _componentMap = new Dictionary<Type, ComponentDescriptor>();
+            _componentDescriptors = new Dictionary<Type, ComponentDescriptor>();
         }
         
         public void AddDelegateFactory(Type delegateFactoryType, Type productInstanceType, ServiceLifetime lifetime)
@@ -84,11 +84,9 @@ namespace InjectReady.YouInject.Internal
             {
                 throw new ServiceBindingException(dynamicDescriptor.ServiceType, componentType, $"{nameof(ServiceCollection)} has already been baked.");
             }
-            
-            dynamicDescriptor.BindComponent(componentType);
-            var componentDescriptor = GetComponentDescriptor(
-                componentType,
-                innerException => new ServiceBindingException(dynamicDescriptor.ServiceType, componentType, innerException));
+
+            var componentDescriptor = GetComponentDescriptor(componentType);
+            dynamicDescriptor.BindComponent(componentDescriptor);
             componentDescriptor.BindService(dynamicDescriptor);
             
             var registration = new ComponentDescriptorRegistration(this, componentType);
@@ -106,10 +104,7 @@ namespace InjectReady.YouInject.Internal
                 throw new InvalidOperationException(GetExceptionMessage() + message);
             }
 
-            var descriptor = GetComponentDescriptor(
-                componentType,
-                innerException => new InvalidOperationException(GetExceptionMessage(), innerException));
-            
+            var descriptor = GetComponentDescriptor(componentType);
             descriptor.AddInitializer(methodName);
             
             string GetExceptionMessage()
@@ -139,20 +134,15 @@ namespace InjectReady.YouInject.Internal
             }
         }
 
-        private ComponentDescriptor GetComponentDescriptor(Type componentType, Func<Exception, Exception> getExceptionOnThrow)
+        private ComponentDescriptor GetComponentDescriptor(Type componentType)
         {
-            if (_componentMap.TryGetValue(componentType, out var componentDescriptor)) return componentDescriptor;
+            if (_componentDescriptors.TryGetValue(componentType, out var componentDescriptor))
+            {
+                return componentDescriptor;
+            }
 
-            try
-            {
-                componentDescriptor = new ComponentDescriptor(componentType);
-            }
-            catch (Exception e)
-            {
-                throw getExceptionOnThrow(e);
-            }
-            
-            _componentMap.Add(componentType, componentDescriptor);
+            componentDescriptor = new ComponentDescriptor(componentType);
+            _componentDescriptors.Add(componentType, componentDescriptor);
             return componentDescriptor;
         }
 

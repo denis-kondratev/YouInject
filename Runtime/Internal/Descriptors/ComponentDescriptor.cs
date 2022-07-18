@@ -7,14 +7,13 @@ namespace InjectReady.YouInject.Internal
 {
     internal class ComponentDescriptor
     {
-        private readonly Type _componentType;
         private object? _binding;
         public MethodInfo? Initializer { get; private set; }
+        public ParameterInfo[]? Parameters { get; private set; }
+        public Type Type { get; }
 
-        public ComponentDescriptor(Type componentType)
+        internal ComponentDescriptor(Type componentType)
         {
-            if (componentType == null) throw new ArgumentNullException(nameof(componentType));
-            
             if (!Utility.IsComponentType(componentType))
             {
                 throw new ArgumentException(
@@ -22,7 +21,7 @@ namespace InjectReady.YouInject.Internal
                     nameof(componentType));
             }
 
-            _componentType = componentType;
+            Type = componentType;
         }
 
         public void BindService(DynamicDescriptor serviceDescriptor)
@@ -52,16 +51,18 @@ namespace InjectReady.YouInject.Internal
             if (Initializer is not null)
             {
                 throw new InvalidOperationException(
-                    $"Cannot add the initializer with name '{methodName}' to the '{_componentType.FullName}' "
+                    $"Cannot add the initializer with name '{methodName}' to the '{Type.FullName}' "
                     + $"component. The initialize already exists with name '{Initializer.Name}'.");
             }
 
-            Initializer = _componentType.GetMethod(methodName);
+            Initializer = Type.GetMethod(methodName);
 
             if (Initializer is null)
             {
-                throw new InvalidOperationException($"Cannot get the method '{methodName}' in {_componentType.FullName}.");
+                throw new InvalidOperationException($"Cannot get the method '{methodName}' in {Type.FullName}.");
             }
+
+            Parameters = Initializer.GetParameters();
         }
 
         public bool TryGetSingleBinding([MaybeNullWhen(false)]out IServiceDescriptor serviceDescriptor)
@@ -73,6 +74,18 @@ namespace InjectReady.YouInject.Internal
             }
 
             serviceDescriptor = null;
+            return false;
+        }
+        
+        public bool TryGetBindingList([MaybeNullWhen(false)]out List<IServiceDescriptor> serviceDescriptors)
+        {
+            if (_binding is List<IServiceDescriptor> descriptors)
+            {
+                serviceDescriptors = descriptors;
+                return true;
+            }
+
+            serviceDescriptors = null;
             return false;
         }
     }

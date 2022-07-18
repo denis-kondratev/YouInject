@@ -12,7 +12,7 @@ namespace InjectReady.YouInject.Internal
 
         public IExtendedServiceProvider ServiceProvider => this;
         
-        public ServiceScope(ServiceProvider provider)
+        internal ServiceScope(ServiceProvider provider)
         {
             _provider = provider;
             _context = new ScopeContext();
@@ -45,14 +45,19 @@ namespace InjectReady.YouInject.Internal
             _provider.AddDynamicService(serviceType, instance, _context);
         }
 
-        public void InitializeComponent(MonoBehaviour instance)
+        public void PutComponentIntoService(Type componentType)
         {
-            throw new NotImplementedException();
+            if (componentType == null) throw new ArgumentNullException(nameof(componentType));
+            
+            ThrowIfDisposed();
+            _provider.PutComponentIntoService(componentType, _context);
         }
 
         public void StockpileComponent(MonoBehaviour component)
         {
-            throw new NotImplementedException();
+            ThrowIfDisposed();
+            
+            _provider.StockpileComponent(component);
         }
         
         private void ThrowIfDisposed()

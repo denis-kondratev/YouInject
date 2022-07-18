@@ -4,7 +4,7 @@ namespace InjectReady.YouInject
 {
     public interface IHostBuilder
     {
-        IHostBuilder ConfigureServices(Action<IServiceCollection> configureServices);
+        IHostBuilder RegisterServices(Action<IServiceCollection> registerServices);
         
         IHost BuildHost();
     }

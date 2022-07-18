@@ -7,7 +7,7 @@ namespace InjectReady.YouInject.Internal
         public Type ServiceType { get; }
         public ServiceLifetime Lifetime { get; }
 
-        public Type? Binding { get; private set; }
+        public ComponentDescriptor? Binding { get; private set; }
 
         public DynamicDescriptor(Type serviceType, bool isSingleton)
         {
@@ -20,27 +20,19 @@ namespace InjectReady.YouInject.Internal
             throw new ServiceIsNotRegisteredException(ServiceType, "The service has not been yet added.");
         }
 
-        public void BindComponent(Type componentType)
+        public void BindComponent(ComponentDescriptor componentDescriptor)
         {
-            if (componentType == null) throw new ArgumentNullException(nameof(componentType));
-
-            if (!Utility.IsComponentType(componentType))
-            {
-                throw new ServiceBindingException(
-                    ServiceType,
-                    componentType,
-                    "The component is not derived from MonoBehaviour.");
-            }
-
+            if (componentDescriptor == null) throw new ArgumentNullException(nameof(componentDescriptor));
+            
             if (Binding is not null)
             {
                 throw new ServiceBindingException(
                     ServiceType,
-                    componentType,
-                    $"The service has already bound to '{Binding.FullName}'.");
+                    componentDescriptor.Type,
+                    $"The service has already bound to '{Binding.Type.Name}'.");
             }
 
-            Binding = componentType;
+            Binding = componentDescriptor;
         }
     }
 }

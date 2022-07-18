@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using InjectReady.YouInject.Internal;
+using UnityEngine;
 
 namespace InjectReady.YouInject
 {
@@ -24,6 +25,12 @@ namespace InjectReady.YouInject
             var scopeFactory = services.GetService<IServiceScopeFactory>();
             var scope = scopeFactory.CreateScope();
             return scope;
+        }
+        
+        public static void PutComponentIntoService<T>(this IExtendedServiceProvider services) where T : MonoBehaviour
+        {
+            var componentType = typeof(T);
+            services.PutComponentIntoService(componentType);
         }
 
         internal static void GetServices(this ServiceProvider provider, ScopeContext context, Type[] serviceTypes, object[] services)

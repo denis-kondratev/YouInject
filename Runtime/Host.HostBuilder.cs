@@ -15,18 +15,18 @@ namespace InjectReady.YouInject
                 AddBuiltInServices();
             }
 
-            public IHostBuilder ConfigureServices(Action<IServiceCollection> configureServices)
+            public IHostBuilder RegisterServices(Action<IServiceCollection> registerServices)
             {
-                if (configureServices == null) throw new ArgumentNullException(nameof(configureServices));
+                if (registerServices == null) throw new ArgumentNullException(nameof(registerServices));
                 
-                configureServices.Invoke(_services);
+                registerServices.Invoke(_services);
                 return this;
             }
 
             public IHost BuildHost()
             {
                 _services.Bake();
-                var serviceProvider = new ServiceProvider(_services.ServiceMap, _services.ComponentMap);
+                var serviceProvider = new ServiceProvider(_services.ServiceMap, _services.ComponentDescriptors);
                 var host = new Internal.Host(serviceProvider);
                 _instance = host;
                 return host;
