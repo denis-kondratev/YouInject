@@ -1,4 +1,5 @@
-﻿using InjectReady.YouInject.Internal;
+﻿using System;
+using InjectReady.YouInject.Internal;
 
 namespace InjectReady.YouInject
 {
@@ -7,28 +8,33 @@ namespace InjectReady.YouInject
         private class HostBuilder : IHostBuilder
         {
             private readonly ServiceCollection _services;
-            
-            public HostBuilder()
+
+            internal HostBuilder()
             {
                 _services = new ServiceCollection();
                 AddBuiltInServices();
             }
 
-            public IServiceCollection Services => _services;
-            
+            public IHostBuilder RegisterServices(Action<IServiceCollection> registerServices)
+            {
+                if (registerServices == null) throw new ArgumentNullException(nameof(registerServices));
+                
+                registerServices.Invoke(_services);
+                return this;
+            }
+
             public IHost BuildHost()
             {
-                var serviceDescriptors = _services.Bake();
-                var host = new Internal.Host(serviceDescriptors);
+                _services.Bake();
+                var serviceProvider = new ServiceProvider(_services.ServiceDescriptors, _services.ComponentDescriptors);
+                var host = new Internal.Host(serviceProvider);
                 _instance = host;
                 return host;
             }
             
             private void AddBuiltInServices()
             {
-                _services.AddSingleton<IYouInjectLogger, DefaultLogger>();
-                _services.AddSingleton<Logger>();
-                _services.AddDynamicSingleton<IServiceScopeFactory>();
+                _services.AddDynamicService(typeof(IServiceScopeFactory));
             }
         }
     }

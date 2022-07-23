@@ -36,12 +36,8 @@ namespace InjectReady.YouInject.Internal
 
         public TResult Instantiate0<TResult>() where TResult : class
         {
-            if (Instantiate() is not TResult product)
-            {
-                throw new Exception();
-            }
-            
-            return product;
+            var product = Instantiate() as TResult;
+            return product!;
         }
 
         public TResult Instantiate1<T, TResult>(T arg) where TResult : class

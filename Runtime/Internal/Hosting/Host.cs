@@ -1,40 +1,38 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace InjectReady.YouInject.Internal
 {
     internal class Host : IHost
     {
-        private readonly RootServiceScope _serviceScope;
+        private readonly ServiceProvider _serviceProvider;
+        private bool _isDisposed;
 
-        public IServiceScope RootScope
+        public IExtendedServiceProvider ServiceProvider
         {
             get
             {
                 if (_isDisposed)
                 {
-                    throw new ObjectDisposedException("Host has already been disposed of.");
+                    throw new ObjectDisposedException(nameof(IHost));
                 }
                 
-                return _serviceScope;
+                return _serviceProvider;
             }
         }
-
-        private bool _isDisposed;
-
-        public Host(IReadOnlyDictionary<Type, IServiceDescriptor> descriptors)
-        {
-            _serviceScope = new RootServiceScope(descriptors);
-            _serviceScope.AddService(typeof(IServiceScopeFactory), _serviceScope);
-        }
         
+        public Host(ServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+            _serviceProvider.AddDynamicService(typeof(IServiceScopeFactory), _serviceProvider);
+        }
+
         public async ValueTask DisposeAsync()
         {
             if (_isDisposed) return;
             
             _isDisposed = true;
-            await _serviceScope.DisposeAsync();
+            await _serviceProvider.DisposeAsync();
         }
     }
 }

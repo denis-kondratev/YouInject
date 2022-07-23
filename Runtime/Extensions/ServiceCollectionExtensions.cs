@@ -1,4 +1,7 @@
-﻿namespace InjectReady.YouInject
+﻿using System;
+using UnityEngine;
+
+namespace InjectReady.YouInject
 {
     public static class ServiceCollectionExtensions
     {
@@ -32,35 +35,26 @@
             services.AddService<TService>(ServiceLifetime.Transient);
         }
 
-        public static void AddFactory<TFactory, TProduct>(this IServiceCollection services)
+        public static void AddDelegateFactory<TDelegate, TProduct>(this IServiceCollection services) 
+            where TDelegate : Delegate 
         {
-            var factoryType = typeof(TFactory);
+            var delegateType = typeof(TDelegate);
             var productType = typeof(TProduct);
-            services.AddFactory(factoryType, productType, ServiceLifetime.Scoped);
+            services.AddDelegateFactory(delegateType, productType, ServiceLifetime.Scoped);
         }
 
-        public static void AddDynamicSingleton<TService>(this IServiceCollection services)
+        public static DynamicServiceRegistration AddDynamicService<TService>(this IServiceCollection services)
         {
             var serviceType = typeof(TService);
-            services.AddDynamicService(serviceType, true);
+            return services.AddDynamicService(serviceType);
         }
-        
-        public static void AddDynamicScoped<TService>(this IServiceCollection services)
+
+        public static void AddMonoBehaviourInitialization<T>(
+            this IServiceCollection services,
+            string initializingMethodName) where T : MonoBehaviour
         {
-            var serviceType = typeof(TService);
-            services.AddDynamicService(serviceType, false);
-        }
-        
-        public static void AddSingletonComponent<TService>(this IServiceCollection services, string? initializingMethodName = null)
-        {
-            var serviceType = typeof(TService);
-            services.AddDynamicComponent(serviceType, true, initializingMethodName);
-        }
-        
-        public static void AddScopedComponent<TService>(this IServiceCollection services, string? initializingMethodName = null)
-        {
-            var serviceType = typeof(TService);
-            services.AddDynamicComponent(serviceType, false, initializingMethodName);
+            var monoBehaviourType = typeof(T);
+            services.InitializeComponentWith(monoBehaviourType, initializingMethodName);
         }
         
         private static void AddService<TService, TInstance>(this IServiceCollection services, ServiceLifetime lifetime)

@@ -1,8 +1,10 @@
-﻿namespace InjectReady.YouInject
+﻿using System;
+
+namespace InjectReady.YouInject
 {
     public interface IHostBuilder
     {
-        IServiceCollection Services { get; }
+        IHostBuilder RegisterServices(Action<IServiceCollection> registerServices);
         
         IHost BuildHost();
     }

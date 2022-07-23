@@ -1,6 +1,6 @@
 ﻿namespace InjectReady.YouInject
 {
-    public interface IScopeProvider
+    public interface IServiceScopeFactory
     {
         IServiceScope CreateScope();
     }

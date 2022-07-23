@@ -7,7 +7,7 @@ namespace InjectReady.YouInject
     {
         private static Internal.Host? _instance;
 
-        public static IServiceScope RootScope
+        public static IExtendedServiceProvider ServiceProvider
         {
             get
             {
@@ -16,7 +16,7 @@ namespace InjectReady.YouInject
                     throw new InvalidOperationException("The host instance does not exist.");
                 }
                 
-                return _instance.RootScope;
+                return _instance.ServiceProvider;
             }
         }
         
