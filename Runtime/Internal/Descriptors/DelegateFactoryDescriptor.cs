@@ -15,7 +15,7 @@ namespace InjectReady.YouInject.Internal
         {
             if (delegateType.BaseType != typeof(MulticastDelegate))
             {
-                throw new DelegateFactoryRegistrationException(delegateType, "The specified type is not a delegate.");
+                throw new ArgumentOutOfRangeException(nameof(delegateType), "The specified type is not a delegate.");
             }
 
             _productType = productType;

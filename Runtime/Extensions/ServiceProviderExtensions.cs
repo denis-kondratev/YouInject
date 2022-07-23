@@ -14,10 +14,16 @@ namespace InjectReady.YouInject
             return (T)instance;
         }
 
-        public static void AddDynamicService<T>(this IExtendedServiceProvider services, object instance)
+        public static void AddSingletonService<T>(this IRootServiceProvider services, object instance)
         {
             var serviceType = typeof(T);
-            services.AddDynamicService(serviceType, instance);
+            services.AddSingletonService(serviceType, instance);
+        }
+        
+        public static void AddScopedService<T>(this IServiceScope services, object instance)
+        {
+            var serviceType = typeof(T);
+            services.AddScopedService(serviceType, instance);
         }
 
         public static IServiceScope CreateScope(this IServiceProvider services)

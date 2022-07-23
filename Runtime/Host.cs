@@ -7,7 +7,7 @@ namespace InjectReady.YouInject
     {
         private static Internal.Host? _instance;
 
-        public static IExtendedServiceProvider ServiceProvider
+        public static IRootServiceProvider ServiceProvider
         {
             get
             {

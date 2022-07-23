@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal class ServiceProvider : IExtendedServiceProvider, IServiceScopeFactory, IAsyncDisposable
+    internal class ServiceProvider : IRootServiceProvider, IServiceScopeFactory, IAsyncDisposable
     {
         private delegate object? ServiceResponder(ScopeContext context);
         
@@ -49,8 +49,8 @@ namespace InjectReady.YouInject.Internal
             
             return service;
         }
-
-        public void AddDynamicService(Type serviceType, object instance)
+        
+        public void AddSingletonService(Type serviceType, object instance)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             if (instance == null) throw new ArgumentNullException(nameof(instance));
@@ -87,7 +87,7 @@ namespace InjectReady.YouInject.Internal
             {
                 if (!_serviceDescriptors.TryGetValue(serviceType, out var descriptor))
                 {
-                    throw new ServiceIsNotRegisteredException(serviceType);
+                    throw ExceptionBuilder.ServiceNotRegistered(serviceType);
                 }
 
                 FabricateServiceAndResponder(descriptor, context, out service);
@@ -95,9 +95,7 @@ namespace InjectReady.YouInject.Internal
             
             if (service is null)
             {
-                throw new InvalidServiceOperationException(
-                    serviceType,
-                    "Cannot get the service. It does not exist and cannot be fabricated.");
+                throw ExceptionBuilder.ServiceNotFound(serviceType);
             }
             
             return service;
@@ -109,24 +107,19 @@ namespace InjectReady.YouInject.Internal
             
             if (!_serviceDescriptors.TryGetValue(serviceType, out var descriptor))
             {
-                throw new ServiceIsNotRegisteredException(serviceType, "Cannot add a dynamic service.");
+                throw ExceptionBuilder.ServiceNotRegistered(serviceType);
             }
 
             if (descriptor is not DynamicServiceDescriptor dynamicServiceDescriptor)
             {
-                throw new InvalidServiceOperationException(
-                    serviceType,
-                    "Cannot add a dynamic service. The service is not registered as dynamic.");
+                throw new ArgumentException($"The '{serviceType.Name}' service is not dynamic.");
             }
 
             var instanceType = instance.GetType();
 
             if (!serviceType.IsAssignableFrom(instanceType))
             {
-                throw new InvalidServiceOperationException(
-                    serviceType,
-                    $"Cannot add a dynamic service. The service '{serviceType.Name}' is not assignable "
-                    + $"from the instance '{instanceType.Name}'.");
+                throw new ArgumentException("The instance is of an inappropriate type.");
             }
             
             AddDynamicService(dynamicServiceDescriptor, instance, context);
@@ -140,9 +133,7 @@ namespace InjectReady.YouInject.Internal
             
             if (!_componentDescriptors.TryGetValue(componentType, out var descriptor))
             {
-                throw new InvalidComponentOperationException(
-                    componentType,
-                    "Cannot put the component into service. The initializing method is not specified and there is no bindings.");
+                throw ExceptionBuilder.ComponentNotRegistered(componentType);
             }
             
             PutComponentIntoService(descriptor, component, context);
@@ -171,42 +162,37 @@ namespace InjectReady.YouInject.Internal
             }
         }
 
-        private void AddDynamicService(DynamicServiceDescriptor descriptor, object service, ScopeContext context)
+        private void AddDynamicService(DynamicServiceDescriptor descriptor, object instance, ScopeContext context)
         {
             var serviceType = descriptor.ServiceType;
             
-            if (descriptor.Binding is not null && descriptor.Binding.Type != service.GetType())
+            if (descriptor.Binding is not null && !descriptor.Binding.Type.IsInstanceOfType(instance))
             {
-                throw new InvalidServiceOperationException(
-                    serviceType,
-                    $"Cannot add the dynamic service with the instance of the '{service.GetType().Name}' type. "
-                    + $"The service is bound to the '{descriptor.Binding.Type.Name}' type.");
+                throw ExceptionBuilder.InstanceDoesNotMatchBinding(instance.GetType(), descriptor.Binding.Type);
             }
 
             if (_serviceResponders.TryGetValue(serviceType, out var responder))
             {
                 var existedService = responder.Invoke(context);
+                
                 if (existedService is not null)
                 {
-                    throw new InvalidServiceOperationException(
-                        serviceType,
-                        $"Cannot add the dynamic service with the instance of the '{service.GetType().Name}' type. "
-                        + $"The instance of the '{existedService.GetType().Name}' type is already added.");
+                    throw new InvalidOperationException($"An instance of the '{serviceType.Name}' service is already added.");
                 }
                 
-                context.CacheService(service, serviceType);
+                context.CacheService(instance, serviceType);
                 return;
             }
             
             if (context == _rootContext)
             {
-                context.CaptureService(service);
-                _serviceResponders.Add(serviceType, _ => service);
+                context.CaptureService(instance);
+                _serviceResponders.Add(serviceType, _ => instance);
                 return;
             }
             
             AddScopedDynamicResponder(descriptor);
-            context.CacheService(service, serviceType);
+            context.CacheService(instance, serviceType);
         }
 
         private void InitializeComponent(
@@ -245,9 +231,7 @@ namespace InjectReady.YouInject.Internal
                     FabricateConstructableServiceAndResponder(constructable, context, out service);
                     return;
                 default:
-                    throw new ArgumentOutOfRangeException(
-                        nameof(descriptor),
-                        $"Unexpected descriptor type: {descriptor.GetType()}.");
+                    throw ExceptionBuilder.UnexpectedDescriptor(descriptor.GetType());
             }
         }
 

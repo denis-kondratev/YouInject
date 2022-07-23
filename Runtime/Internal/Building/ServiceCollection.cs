@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace InjectReady.YouInject.Internal
 {
@@ -34,17 +33,17 @@ namespace InjectReady.YouInject.Internal
             _componentDescriptors = new Dictionary<Type, ComponentDescriptor>();
         }
         
-        public void AddDelegateFactory(Type delegateFactoryType, Type productInstanceType, ServiceLifetime lifetime)
+        public void AddDelegateFactory(Type delegateType, Type productInstanceType, ServiceLifetime lifetime)
         {
-            if (delegateFactoryType == null) throw new ArgumentNullException(nameof(delegateFactoryType));
+            if (delegateType == null) throw new ArgumentNullException(nameof(delegateType));
             if (productInstanceType == null) throw new ArgumentNullException(nameof(productInstanceType));
             
-            ThrowIfBaked(delegateFactoryType);
-            var descriptor = new DelegateFactoryDescriptor(delegateFactoryType, productInstanceType, lifetime);
+            ThrowIfBaked();
+            var descriptor = new DelegateFactoryDescriptor(delegateType, productInstanceType, lifetime);
             
-            if (!_serviceDescriptors.TryAdd(delegateFactoryType, descriptor))
+            if (!_serviceDescriptors.TryAdd(delegateType, descriptor))
             {
-                ThrowServiceAlreadyRegistered(delegateFactoryType);
+                throw ExceptionBuilder.ServiceAlreadyRegistered(delegateType);
             }
         }
         
@@ -53,12 +52,12 @@ namespace InjectReady.YouInject.Internal
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             if (implementationType == null) throw new ArgumentNullException(nameof(implementationType));
             
-            ThrowIfBaked(serviceType);
+            ThrowIfBaked();
             var descriptor = new ConstructableServiceDescriptor(serviceType, implementationType, lifetime);
             
             if (!_serviceDescriptors.TryAdd(serviceType, descriptor))
             {
-                ThrowServiceAlreadyRegistered(serviceType);
+                throw ExceptionBuilder.ServiceAlreadyRegistered(serviceType);
             }
         }
 
@@ -66,12 +65,12 @@ namespace InjectReady.YouInject.Internal
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             
-            ThrowIfBaked(serviceType);
+            ThrowIfBaked();
             var descriptor = new DynamicServiceDescriptor(serviceType);
             
             if (!_serviceDescriptors.TryAdd(serviceType, descriptor))
             {
-                ThrowServiceAlreadyRegistered(serviceType);
+                throw ExceptionBuilder.ServiceAlreadyRegistered(serviceType);
             }
 
             if (Utility.IsComponentType(serviceType))
@@ -88,12 +87,7 @@ namespace InjectReady.YouInject.Internal
             if (componentType == null) throw new ArgumentNullException(nameof(componentType));
             if (methodName == null) throw new ArgumentNullException(nameof(methodName));
             
-            if (_isBaked)
-            {
-                throw new InvalidOperationException(
-                    $"Cannot add an initializer to the '{componentType.Name}' component with the '{methodName}' "
-                    + $"method\nServiceCollection has already been baked.");
-            }
+            ThrowIfBaked();
 
             var descriptor = GetComponentDescriptor(componentType);
             descriptor.AddInitializer(methodName);
@@ -105,10 +99,7 @@ namespace InjectReady.YouInject.Internal
         {
             if (_isBaked)
             {
-                throw new ServiceBindingFailureException(
-                    dynamicServiceDescriptor.ServiceType,
-                    componentType,
-                    "ServiceCollection has already been baked.");
+                throw ExceptionBuilder.ObjectBaked(nameof(ServiceCollection));
             }
 
             var componentDescriptor = GetComponentDescriptor(componentType);
@@ -141,17 +132,11 @@ namespace InjectReady.YouInject.Internal
             return componentDescriptor;
         }
 
-        [DoesNotReturn]
-        private static void ThrowServiceAlreadyRegistered(Type serviceType)
-        {
-            throw new ServiceRegistrationFailureException(serviceType, "The service has already registered.");
-        }
-        
-        private void ThrowIfBaked(Type serviceType)
+        private void ThrowIfBaked()
         {
             if (_isBaked)
             {
-                throw new ServiceRegistrationFailureException(serviceType, "Service Collection is already baked.");
+                throw ExceptionBuilder.ObjectBaked(nameof(ServiceCollection));
             }
         }
         
@@ -159,7 +144,7 @@ namespace InjectReady.YouInject.Internal
         {
             if (!_isBaked)
             {
-                throw new InvalidOperationException($"{nameof(ServiceCollection)} has not been baked yet.");
+                throw new InvalidOperationException($"{nameof(ServiceCollection)} is not yet baked.");
             }
         }
     }
