@@ -22,15 +22,12 @@ namespace InjectReady.YouInject.Internal
 
                 if (productType.IsAssignableFrom(factoryDelegate.ReturnType))
                 {
-                    throw new DelegateFactoryRegistrationException(
-                        delegateType,
-                        $"The specified product type '{productType.Name}' of the factory is not assignable "
-                        + $"from the returned type '{factoryDelegate.ReturnType.Name}' of specified delegate.");
+                    throw new ArgumentOutOfRangeException(nameof(productType), "Inappropriate type of product");
                 }
                 
                 var delegateParameters = factoryDelegate.GetParameters();
                 _steadyParameterTypes = GetSteadyParameterTypes(delegateParameters, productType)
-                                        ?? ThrowCannotFindSuitableConstructor(delegateType, productType);
+                                        ?? throw ExceptionBuilder.NoSuitableConstructor(delegateType, productType);
                 _totalParameterCount = delegateParameters.Length + _steadyParameterTypes.Length;
                 var delegateParameterTypes = delegateParameters.Select(p => p.ParameterType).ToArray();
                 _factoryMethodInfo = GetFactoryMethodInfo(factoryDelegate.ReturnType, delegateParameterTypes);
@@ -120,14 +117,6 @@ namespace InjectReady.YouInject.Internal
                 var genericMethod = GenericFactory.FactoryMethods[parameterTypes.Length];
                 var methodInfo = genericMethod.MakeGenericMethod(genericTypes);
                 return methodInfo;
-            }
-
-            private static Type[] ThrowCannotFindSuitableConstructor(Type delegateType, Type productType)
-            {
-                throw new DelegateFactoryRegistrationException(
-                    delegateType,
-                    $"Cannot find the suitable constructor for the specified '{productType.Name}' "
-                    + "product type of the factory.");
             }
         }
     }

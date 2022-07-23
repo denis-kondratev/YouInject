@@ -8,7 +8,7 @@ namespace InjectReady.YouInject.Internal
         private readonly ServiceProvider _serviceProvider;
         private bool _isDisposed;
 
-        public IExtendedServiceProvider ServiceProvider
+        public IRootServiceProvider ServiceProvider
         {
             get
             {
@@ -24,7 +24,7 @@ namespace InjectReady.YouInject.Internal
         public Host(ServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-            _serviceProvider.AddDynamicService(typeof(IServiceScopeFactory), _serviceProvider);
+            _serviceProvider.AddSingletonService(typeof(IServiceScopeFactory), _serviceProvider);
         }
 
         public async ValueTask DisposeAsync()

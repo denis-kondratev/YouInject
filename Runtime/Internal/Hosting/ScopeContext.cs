@@ -56,20 +56,21 @@ namespace InjectReady.YouInject.Internal
             }
         }
         
-        internal void CacheService(object service, Type serviceTypeToCache)
+        internal void CacheService(object instance, Type serviceType)
         {
             ThrowIfDisposed();
             
-            if (service is IDisposable or IAsyncDisposable)
+            if (instance is IDisposable or IAsyncDisposable)
             {
-                _disposables.Add(service);
+                _disposables.Add(instance);
             }
             
-            if (!_cachedServices.TryAdd(serviceTypeToCache, service))
+            if (!_cachedServices.TryAdd(serviceType, instance))
             {
-                throw new InvalidServiceOperationException(
-                    serviceTypeToCache,
-                    "Cannot cache the service. Another instance has already been cached.");
+
+                throw new InvalidOperationException(
+                    $"Cannot cache an instance of the '{serviceType.Name}' service. "
+                    + "Another one has already been added.");
             }
         }
         
@@ -80,9 +81,9 @@ namespace InjectReady.YouInject.Internal
             
             if (!_stockpile.TryAdd(componentType, component))
             {
-                throw new InvalidComponentOperationException(
-                    componentType,
-                    "Cannot stockpile the component. A component with the same type has already been stockpiled.");
+                throw new InvalidOperationException(
+                    $"Cannot stockpile the '{componentType.Name}' component. "
+                    + "A component with the same type has already been stockpiled.");
             }
         }
         
@@ -95,9 +96,9 @@ namespace InjectReady.YouInject.Internal
                 return component;
             }
 
-            throw new InvalidComponentOperationException(
-                componentType,
-                "Cannot get the component from the stockpile. It has not added yet.");
+            throw new InvalidOperationException(
+                $"Cannot get the '{componentType}' component from the stockpile. "
+                + "It has not added yet");
         }
         
         internal bool TryPickUpComponent(Type componentType, [MaybeNullWhen(false)] out MonoBehaviour component)

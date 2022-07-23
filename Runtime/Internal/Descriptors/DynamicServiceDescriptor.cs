@@ -19,10 +19,9 @@ namespace InjectReady.YouInject.Internal
             
             if (Binding is not null)
             {
-                throw new ServiceBindingFailureException(
-                    ServiceType,
-                    componentDescriptor.Type,
-                    $"The service has already bound to '{Binding.Type.Name}'.");
+                throw new InvalidOperationException(
+                    $"Cannot bind the '{componentDescriptor.Type}' component to the '{ServiceType}' service. "
+                    + $"The service has already bound to the '{Binding.Type.Name}' component.");
             }
 
             Binding = componentDescriptor;

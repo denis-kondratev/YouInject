@@ -4,13 +4,11 @@ using UnityEngine;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal class ServiceScope : IServiceScope, IExtendedServiceProvider
+    internal class ServiceScope : IServiceScope
     {
         private readonly ServiceProvider _provider;
         private readonly ScopeContext _context;
         private bool _isDisposed;
-
-        public IExtendedServiceProvider ServiceProvider => this;
         
         internal ServiceScope(ServiceProvider provider)
         {
@@ -25,7 +23,7 @@ namespace InjectReady.YouInject.Internal
             _isDisposed = true;
             return _context.DisposeAsync();
         }
-        
+
         public object GetService(Type serviceType)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
@@ -35,7 +33,7 @@ namespace InjectReady.YouInject.Internal
             return _provider.GetService(serviceType, _context);
         }
 
-        public void AddDynamicService(Type serviceType, object instance)
+        public void AddScopedService(Type serviceType, object instance)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             if (instance == null) throw new ArgumentNullException(nameof(instance));

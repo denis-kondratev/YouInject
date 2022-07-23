@@ -2,8 +2,8 @@
 
 namespace InjectReady.YouInject
 {
-    public interface IServiceScope : IAsyncDisposable
+    public interface IServiceScope : IExtendedServiceProvider, IAsyncDisposable
     {
-        IExtendedServiceProvider ServiceProvider { get; }
+        void AddScopedService(Type serviceType, object instance);
     }
 }
