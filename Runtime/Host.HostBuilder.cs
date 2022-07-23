@@ -26,7 +26,7 @@ namespace InjectReady.YouInject
             public IHost BuildHost()
             {
                 _services.Bake();
-                var serviceProvider = new ServiceProvider(_services.ServiceMap, _services.ComponentDescriptors);
+                var serviceProvider = new ServiceProvider(_services.ServiceDescriptors, _services.ComponentDescriptors);
                 var host = new Internal.Host(serviceProvider);
                 _instance = host;
                 return host;
@@ -34,7 +34,7 @@ namespace InjectReady.YouInject
             
             private void AddBuiltInServices()
             {
-                _services.AddDynamicService(typeof(IServiceScopeFactory), true);
+                _services.AddDynamicService(typeof(IServiceScopeFactory));
             }
         }
     }

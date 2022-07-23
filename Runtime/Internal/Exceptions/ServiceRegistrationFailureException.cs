@@ -3,9 +3,9 @@
 namespace InjectReady.YouInject.Internal
 {
     [Serializable]
-    internal class ServiceRegistrationException : InvalidOperationException
+    internal class ServiceRegistrationFailureException : InvalidOperationException
     {
-        internal ServiceRegistrationException(Type serviceType, string message) 
+        internal ServiceRegistrationFailureException(Type serviceType, string message) 
             : base($"Cannot register the '{serviceType.Name}' service.\n" + message)
         {
         }

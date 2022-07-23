@@ -2,7 +2,7 @@
 
 namespace InjectReady.YouInject.Internal
 {
-    internal partial class DelegateFactoryDescriptor : IServiceDescriptor
+    internal partial class DelegateFactoryDescriptor : IConstructableServiceDescriptor
     {
         private readonly Type _productType;
         private readonly Type _delegateType;

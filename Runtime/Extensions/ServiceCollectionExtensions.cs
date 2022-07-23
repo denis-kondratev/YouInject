@@ -43,18 +43,12 @@ namespace InjectReady.YouInject
             services.AddDelegateFactory(delegateType, productType, ServiceLifetime.Scoped);
         }
 
-        public static DynamicServiceRegistration AddDynamicSingleton<TService>(this IServiceCollection services)
+        public static DynamicServiceRegistration AddDynamicService<TService>(this IServiceCollection services)
         {
             var serviceType = typeof(TService);
-            return services.AddDynamicService(serviceType, true);
+            return services.AddDynamicService(serviceType);
         }
-        
-        public static DynamicServiceRegistration AddDynamicScoped<TService>(this IServiceCollection services)
-        {
-            var serviceType = typeof(TService);
-            return services.AddDynamicService(serviceType, false);
-        }
-        
+
         public static void AddMonoBehaviourInitialization<T>(
             this IServiceCollection services,
             string initializingMethodName) where T : MonoBehaviour

@@ -6,22 +6,22 @@ namespace InjectReady.YouInject
     public readonly struct DynamicServiceRegistration
     {
         private readonly ServiceCollection _serviceCollection;
-        private readonly DynamicDescriptor _descriptor;
+        private readonly DynamicServiceDescriptor _serviceDescriptor;
 
-        internal DynamicServiceRegistration(ServiceCollection serviceCollection, DynamicDescriptor descriptor)
+        internal DynamicServiceRegistration(ServiceCollection serviceCollection, DynamicServiceDescriptor serviceDescriptor)
         {
             _serviceCollection = serviceCollection;
-            _descriptor = descriptor;
+            _serviceDescriptor = serviceDescriptor;
         }
 
         public ComponentDescriptorRegistration BindTo<T>() where T : MonoBehaviour
         {
-            return _serviceCollection.BindServiceToComponent(_descriptor, typeof(T));
+            return _serviceCollection.BindServiceToComponent(_serviceDescriptor, typeof(T));
         }
 
         public void InitializeWith(string methodName)
         {
-            _serviceCollection.InitializeComponentWith(_descriptor.ServiceType, methodName);
+            _serviceCollection.InitializeComponentWith(_serviceDescriptor.ServiceType, methodName);
         }
     }
 }

@@ -4,14 +4,14 @@ using UnityEngine;
 
 namespace InjectReady.YouInject.Internal
 {
-    internal class ConstructableDescriptor : IServiceDescriptor
+    internal class ConstructableServiceDescriptor : IConstructableServiceDescriptor
     {
         private readonly Func<ServiceProvider, ScopeContext, object> _serviceFactory;
 
         public Type ServiceType { get; }
         public ServiceLifetime Lifetime { get; }
 
-        internal ConstructableDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
+        internal ConstructableServiceDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
         {
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             if (implementationType == null) throw new ArgumentNullException(nameof(implementationType));

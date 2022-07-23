@@ -55,9 +55,10 @@ namespace InjectReady.YouInject.Internal
 
         public void StockpileComponent(MonoBehaviour component)
         {
-            ThrowIfDisposed();
+            if (component == null) throw new ArgumentNullException(nameof(component));
             
-            _provider.StockpileComponent(component);
+            ThrowIfDisposed();
+            _context.StockpileComponent(component);
         }
         
         private void ThrowIfDisposed()

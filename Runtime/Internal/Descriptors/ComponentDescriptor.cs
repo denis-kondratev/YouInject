@@ -24,20 +24,20 @@ namespace InjectReady.YouInject.Internal
             Type = componentType;
         }
 
-        public void BindService(DynamicDescriptor serviceDescriptor)
+        public void BindService(DynamicServiceDescriptor serviceServiceDescriptor)
         {
-            if (serviceDescriptor == null) throw new ArgumentNullException(nameof(serviceDescriptor));
+            if (serviceServiceDescriptor == null) throw new ArgumentNullException(nameof(serviceServiceDescriptor));
 
             switch (_binding)
             {
                 case null:
-                    _binding = serviceDescriptor;
+                    _binding = serviceServiceDescriptor;
                     return;
-                case List<DynamicDescriptor> list:
-                    list.Add(serviceDescriptor);
+                case List<DynamicServiceDescriptor> list:
+                    list.Add(serviceServiceDescriptor);
                     return;
-                case DynamicDescriptor value:
-                    _binding = new List<DynamicDescriptor> { value, serviceDescriptor };
+                case DynamicServiceDescriptor value:
+                    _binding = new List<DynamicServiceDescriptor> { value, serviceServiceDescriptor };
                     return;
                 default:
                     throw new Exception("Unexpected behaviour");
@@ -65,9 +65,9 @@ namespace InjectReady.YouInject.Internal
             Parameters = Initializer.GetParameters();
         }
 
-        public bool TryGetSingleBinding([MaybeNullWhen(false)]out IServiceDescriptor serviceDescriptor)
+        public bool TryGetSingleBinding([MaybeNullWhen(false)]out DynamicServiceDescriptor serviceDescriptor)
         {
-            if (_binding is IServiceDescriptor descriptor)
+            if (_binding is DynamicServiceDescriptor descriptor)
             {
                 serviceDescriptor = descriptor;
                 return true;
@@ -77,9 +77,9 @@ namespace InjectReady.YouInject.Internal
             return false;
         }
         
-        public bool TryGetBindingList([MaybeNullWhen(false)]out List<IServiceDescriptor> serviceDescriptors)
+        public bool TryGetBindingList([MaybeNullWhen(false)]out List<DynamicServiceDescriptor> serviceDescriptors)
         {
-            if (_binding is List<IServiceDescriptor> descriptors)
+            if (_binding is List<DynamicServiceDescriptor> descriptors)
             {
                 serviceDescriptors = descriptors;
                 return true;

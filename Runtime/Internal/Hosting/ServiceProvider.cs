@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -9,16 +8,15 @@ namespace InjectReady.YouInject.Internal
 {
     internal class ServiceProvider : IExtendedServiceProvider, IServiceScopeFactory, IAsyncDisposable
     {
-        private delegate object ServiceResponder(ScopeContext context, bool useStockpile);
+        private delegate object? ServiceResponder(ScopeContext context);
         
         private readonly IReadOnlyDictionary<Type, IServiceDescriptor> _serviceDescriptors;
         private readonly IReadOnlyDictionary<Type, ComponentDescriptor> _componentDescriptors;
+        private readonly Dictionary<Type, ServiceResponder> _serviceResponders;
         private readonly ScopeContext _rootContext;
         private bool _isDisposed;
-        private readonly Dictionary<Type, ServiceResponder> _serviceResponders;
-        private readonly Stockpile _stockpile;
 
-        public ServiceProvider(
+        internal ServiceProvider(
             IReadOnlyDictionary<Type, IServiceDescriptor> serviceDescriptors,
             IReadOnlyDictionary<Type, ComponentDescriptor> componentDescriptors)
         {
@@ -26,7 +24,6 @@ namespace InjectReady.YouInject.Internal
             _componentDescriptors = componentDescriptors;
             _rootContext = new ScopeContext();
             _serviceResponders = new Dictionary<Type, ServiceResponder>();
-            _stockpile = new Stockpile();
         }
 
         public ValueTask DisposeAsync()
@@ -49,6 +46,7 @@ namespace InjectReady.YouInject.Internal
             if (serviceType == null) throw new ArgumentNullException(nameof(serviceType));
             
             var service = GetService(serviceType, _rootContext);
+            
             return service;
         }
 
@@ -72,30 +70,36 @@ namespace InjectReady.YouInject.Internal
             if (component == null) throw new ArgumentNullException(nameof(component));
             
             ThrowIfDisposed();
-            var componentType = component.GetType();
-
-            if (!Utility.IsComponentType(componentType))
-            {
-                throw new InvalidComponentOperationException(
-                    componentType,
-                    "Cannot stockpile the component. It is not derived from the MonoBehaviour type.");
-            }
-
-            _stockpile.Add(componentType, component);
+            _rootContext.StockpileComponent(component);
         }
 
-        internal object GetService(Type serviceType, ScopeContext context, bool useStockpile = false)
+        internal object GetService(Type serviceType, ScopeContext context)
         {
             ThrowIfDisposed();
+
+            object? service;
             
             if (_serviceResponders.TryGetValue(serviceType, out var responder))
             {
-                return responder.Invoke(context, useStockpile);
+                service = responder.Invoke(context);
+            }
+            else
+            {
+                if (!_serviceDescriptors.TryGetValue(serviceType, out var descriptor))
+                {
+                    throw new ServiceIsNotRegisteredException(serviceType);
+                }
+
+                FabricateServiceAndResponder(descriptor, context, out service);
             }
             
-            responder = CreateServiceResponder(serviceType, useStockpile) ?? _serviceResponders[serviceType];
-            _serviceResponders.Add(serviceType, responder);
-            var service = responder.Invoke(context, useStockpile);
+            if (service is null)
+            {
+                throw new InvalidServiceOperationException(
+                    serviceType,
+                    "Cannot get the service. It does not exist and cannot be fabricated.");
+            }
+            
             return service;
         }
 
@@ -108,15 +112,31 @@ namespace InjectReady.YouInject.Internal
                 throw new ServiceIsNotRegisteredException(serviceType, "Cannot add a dynamic service.");
             }
 
-            AddDynamicService(descriptor, instance, context);
+            if (descriptor is not DynamicServiceDescriptor dynamicServiceDescriptor)
+            {
+                throw new InvalidServiceOperationException(
+                    serviceType,
+                    "Cannot add a dynamic service. The service is not registered as dynamic.");
+            }
+
+            var instanceType = instance.GetType();
+
+            if (!serviceType.IsAssignableFrom(instanceType))
+            {
+                throw new InvalidServiceOperationException(
+                    serviceType,
+                    $"Cannot add a dynamic service. The service '{serviceType.Name}' is not assignable "
+                    + $"from the instance '{instanceType.Name}'.");
+            }
+            
+            AddDynamicService(dynamicServiceDescriptor, instance, context);
         }
 
         internal void PutComponentIntoService(Type componentType, ScopeContext context)
         {
             ThrowIfDisposed();
 
-            var component = _stockpile.PickUpComponent(componentType);
-            
+            var component = context.PickUpComponent(componentType);
             
             if (!_componentDescriptors.TryGetValue(componentType, out var descriptor))
             {
@@ -128,7 +148,10 @@ namespace InjectReady.YouInject.Internal
             PutComponentIntoService(descriptor, component, context);
         }
         
-        private void PutComponentIntoService(ComponentDescriptor componentDescriptor, MonoBehaviour component, ScopeContext context)
+        private void PutComponentIntoService(
+            ComponentDescriptor componentDescriptor,
+            MonoBehaviour component,
+            ScopeContext context)
         {
             if (componentDescriptor.Initializer is not null)
             {
@@ -140,113 +163,183 @@ namespace InjectReady.YouInject.Internal
                 AddDynamicService(serviceDescriptor, component, context);
             }
 
-            if (componentDescriptor.TryGetBindingList(out var serviceDescriptors))
+            if (!componentDescriptor.TryGetBindingList(out var serviceDescriptors)) return;
+            
+            foreach (var descriptor in serviceDescriptors)
             {
-                foreach (var descriptor in serviceDescriptors)
-                {
-                    AddDynamicService(descriptor, component, context);
-                }
+                AddDynamicService(descriptor, component, context);
             }
         }
 
-        private void AddDynamicService(IServiceDescriptor descriptor, object instance, ScopeContext context)
+        private void AddDynamicService(DynamicServiceDescriptor descriptor, object service, ScopeContext context)
         {
             var serviceType = descriptor.ServiceType;
             
-            if (descriptor is not DynamicDescriptor dynamicDescriptor)
-            {
-                throw new InvalidServiceOperationException(serviceType, "Cannot add a non-dynamic service.");
-            }
-            
-            if (dynamicDescriptor.Binding is not null && dynamicDescriptor.Binding.Type != instance.GetType())
+            if (descriptor.Binding is not null && descriptor.Binding.Type != service.GetType())
             {
                 throw new InvalidServiceOperationException(
                     serviceType,
-                    $"Cannot add the service with the instance of '{instance.GetType().Name}'. "
-                    + $"The service is bound to '{dynamicDescriptor.Binding.Type.Name}' type.");
+                    $"Cannot add the dynamic service with the instance of the '{service.GetType().Name}' type. "
+                    + $"The service is bound to the '{descriptor.Binding.Type.Name}' type.");
             }
 
-            if (descriptor.Lifetime != ServiceLifetime.Singleton)
+            if (_serviceResponders.TryGetValue(serviceType, out var responder))
             {
-                var serviceTypeToCache = descriptor.Lifetime == ServiceLifetime.Transient ?  null : serviceType;
-                context.CaptureService(instance, serviceTypeToCache);
+                var existedService = responder.Invoke(context);
+                if (existedService is not null)
+                {
+                    throw new InvalidServiceOperationException(
+                        serviceType,
+                        $"Cannot add the dynamic service with the instance of the '{service.GetType().Name}' type. "
+                        + $"The instance of the '{existedService.GetType().Name}' type is already added.");
+                }
+                
+                context.CacheService(service, serviceType);
                 return;
             }
             
-            if (!_serviceResponders.TryAdd(serviceType, (_, _) => instance))
+            if (context == _rootContext)
             {
-                throw new InvalidServiceOperationException(
-                    serviceType,
-                    "Cannot add a dynamic service. The instance of the service already exists.");
+                context.CaptureService(service);
+                _serviceResponders.Add(serviceType, _ => service);
+                return;
             }
-
-            _rootContext.CaptureService(instance);
+            
+            AddScopedDynamicResponder(descriptor);
+            context.CacheService(service, serviceType);
         }
 
-        private void InitializeComponent(MonoBehaviour component, MethodInfo methodInfo, ParameterInfo[] parameterInfos, ScopeContext context)
+        private void InitializeComponent(
+            MonoBehaviour component,
+            MethodInfo methodInfo,
+            ParameterInfo[] parameterInfos,
+            ScopeContext context)
         {
             var parameters = parameterInfos.Length == 0 ? Array.Empty<object>() : new object[parameterInfos.Length];
 
             for (var i = 0; i < parameters.Length; i++)
             {
-                parameters[i] = GetService(parameterInfos[i].ParameterType, context, true);
+                parameters[i] = GetService(parameterInfos[i].ParameterType, context);
             }
 
             methodInfo.Invoke(component, parameters);
         }
-
-        private ServiceResponder? CreateServiceResponder(Type serviceType, bool useStockpile)
+        
+        private void FabricateServiceAndResponder(IServiceDescriptor descriptor, ScopeContext context, out object? service)
         {
-            if (!_serviceDescriptors.TryGetValue(serviceType, out var descriptor))
+            switch (descriptor)
             {
-                throw new ServiceIsNotRegisteredException(serviceType);
+                case DynamicServiceDescriptor dynamic:
+                    if (dynamic.Binding is not null
+                        && context.TryPickUpComponent(dynamic.Binding.Type, out var component))
+                    {
+                        PutComponentIntoService(dynamic.Binding, component, context);
+                        service = component;
+                    }
+                    else
+                    {
+                        service = null;
+                    }
+                    return;
+                case IConstructableServiceDescriptor constructable:
+                    FabricateConstructableServiceAndResponder(constructable, context, out service);
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(descriptor),
+                        $"Unexpected descriptor type: {descriptor.GetType()}.");
             }
+        }
 
-            if (descriptor.Lifetime != ServiceLifetime.Singleton)
-            {
-                return (context, stockpile) => RespondServiceWithContext(descriptor, context, stockpile);
-            }
-
-            if (useStockpile && TryGetServiceFromStockpile(descriptor, _rootContext, out var service))
-            {
-                return null;
-            }
+        private void FabricateConstructableServiceAndResponder(
+            IConstructableServiceDescriptor descriptor,
+            ScopeContext context,
+            out object? service)
+        {
+            ServiceResponder responder;
             
+            switch (descriptor.Lifetime)
+            {
+                case ServiceLifetime.Transient:
+                    AddTransientResponder(descriptor, out responder);
+                    break;
+                case ServiceLifetime.Scoped:
+                    AddScopedResponder(descriptor, out responder);
+                    break;
+                case ServiceLifetime.Singleton:
+                    AddSingletonResponder(descriptor, out service);
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            service = responder.Invoke(context);
+        }
+        
+        private void AddSingletonResponder(IConstructableServiceDescriptor descriptor, out object service)
+        {
             service = descriptor.ResolveService(this, _rootContext);
+            var singleton = service;
+            _serviceResponders.Add(descriptor.ServiceType, _ => singleton);
             _rootContext.CaptureService(service);
-            return (_, _) => service;
         }
 
-        private object RespondServiceWithContext(IServiceDescriptor descriptor, ScopeContext context, bool useStockpile)
+        private void AddScopedResponder(IConstructableServiceDescriptor descriptor, out ServiceResponder responder)
         {
-            if (context.TryGetCachedService(descriptor.ServiceType, out var service))
+            responder = context =>
             {
+                if (context.TryGetCachedService(descriptor.ServiceType, out var service))
+                {
+                    return service;
+                }
+
+                service = descriptor.ResolveService(this, context);
+                context.CacheService(service, descriptor.ServiceType);
                 return service;
-            }
-            
-            if (useStockpile && TryGetServiceFromStockpile(descriptor, context, out service))
-            {
-                return service;
-            }
-            
-            service = descriptor.ResolveService(this, context);
-            context.CaptureService(service, descriptor.GetTypeToCache());
-            return service;
+            };
+
+            _serviceResponders.Add(descriptor.ServiceType, responder);
         }
 
-        private bool TryGetServiceFromStockpile(IServiceDescriptor descriptor, ScopeContext context, [MaybeNullWhen(false)] out object service)
+        private void AddTransientResponder(IConstructableServiceDescriptor descriptor, out ServiceResponder responder)
         {
-            if (descriptor is not DynamicDescriptor dynamic
-                || dynamic.Binding is null
-                || !_stockpile.TryPickUpComponent(dynamic.Binding.Type, out var component))
+            responder = context =>
             {
-                service = null;
-                return false;
-            }
+                var service = descriptor.ResolveService(this, context);
+                context.CaptureService(service);
+                return service;
+            };
             
-            PutComponentIntoService(dynamic.Binding, component, context);
-            service = component;
-            return true;
+            _serviceResponders.Add(descriptor.ServiceType, responder);
+        }
+        
+        private void AddScopedDynamicResponder(DynamicServiceDescriptor descriptor)
+        {
+            if (descriptor.Binding is null)
+            {
+                _serviceResponders.Add(descriptor.ServiceType, context =>
+                {
+                    context.TryGetCachedService(descriptor.ServiceType, out var service);
+                    return service;
+                });
+                return;
+            }
+
+            _serviceResponders.Add(descriptor.ServiceType, context =>
+            {
+                if (context.TryGetCachedService(descriptor.ServiceType, out var service))
+                {
+                    return service;
+                }
+
+                if (!context.TryPickUpComponent(descriptor.Binding.Type, out var component))
+                {
+                    return null;
+                }
+                
+                PutComponentIntoService(descriptor.Binding, component, context);
+                return component;
+            });
         }
 
         private void ThrowIfDisposed()
