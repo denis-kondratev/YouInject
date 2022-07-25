@@ -45,5 +45,15 @@ namespace InjectReady.YouInject.Internal
         {
             return new ArgumentException($"The instance type '{instanceType.Name}' does not match the binding one '{bindingType.Name}'.");
         }
+
+        internal static InvalidOperationException ScopeDoesNotExist()
+        {
+            return new InvalidOperationException("The scope does not exist.");
+        }
+        
+        internal static InvalidOperationException ScopeAlreadyExists()
+        {
+            return new InvalidOperationException("The scope already exists.");
+        }
     }
 }
